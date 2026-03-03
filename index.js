@@ -9,7 +9,8 @@ app.use(express.json());
 
 // --- 1. MongoDB Atlas に接続 ---
 // 社長の接続文字列をここにセット
-const MONGO_URL = "mongodb+srv://kmiyazaki_db_user:vhHqN1AMSIoXVwhS@blockranking.xgtpuc8.mongodb.net/RankingDB?retryWrites=true&w=majority&appName=BlockRanking";
+// ↓これに丸ごと書き換えてみてください（パスワード・DB名注入済み）
+const MONGO_URL = "mongodb+srv://kmiyazaki_db_user:vhHqN1AMSIoXVwhS@blockranking.xgtpuc8.mongodb.net/RankingDB?retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URL)
     .then(() => console.log('✅ MongoDB接続成功！'))
