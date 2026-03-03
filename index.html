@@ -1,58 +1,230 @@
-<style>
-    /* ランキング用UI */
-    #ranking-board {
-        display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.9); border: 2px solid var(--neon-blue); padding: 20px;
-        border-radius: 15px; width: 250px; text-align: center; z-index: 500;
-    }
-    .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 5px 0; color: #fff; }
-    #name-input { width: 80%; padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid var(--neon-blue); color: #fff; text-align: center; }
-</style>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BREAKOUT RANKING BATTLE</title>
+    <style>
+        :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-<div id="ranking-board">
-    <h2 style="color:var(--neon-blue); font-size: 18px;">HALL OF FAME</h2>
-    <div id="rank-list"></div>
-    <hr style="border:0.5px solid #333;">
-    <input type="text" id="name-input" placeholder="ENTER NAME" maxlength="10">
-    <button class="menu-btn" onclick="submitScore()" style="font-size:12px; padding:10px;">SUBMIT & RETRY</button>
-</div>
+        /* ヘッダー */
+        .header { margin-top: 20px; text-align: center; }
+        .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-<script>
-    let currentScore = 0;
-    const SERVER_URL = 'https://your-api-server.com'; // 社長のサーバーURL
+        /* メインエリア */
+        #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
+        canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
 
-    // ゲームオーバー時に呼び出す
-    function gameOver() {
-        isGameOver = true;
-        document.getElementById('ranking-board').style.display = 'block';
-        loadRanking(); // 現在のランキングを表示
-    }
+        /* ランキングUI */
+        #ranking-board {
+            display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 25px;
+            border-radius: 20px; width: 280px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .rank-item { display: flex; justify-content: space-between; font-size: 16px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        #name-input { width: 90%; padding: 12px; margin: 15px 0; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
+        
+        .menu-btn { width: 100%; padding: 15px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    // ランキングを取得して表示
-    async function loadRanking() {
-        try {
-            const res = await fetch(`${SERVER_URL}/api/ranking`);
-            const data = await res.json();
-            const list = document.getElementById('rank-list');
-            list.innerHTML = data.map((s, i) => `
-                <div class="rank-item">
-                    <span>${i+1}. ${s.name}</span>
-                    <span>${s.score}pt</span>
+        /* 操作エリア */
+        .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
+        .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="score-display">SCORE: <span id="score">0</span></div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="300" height="400"></canvas>
+
+        <div id="ranking-board">
+            <h2 style="color:var(--neon-pink); margin-top: 0;">GAME OVER</h2>
+            <div id="rank-list">
                 </div>
-            `).join('');
-        } catch (e) { console.error("Ranking load failed"); }
-    }
+            <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
+            <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
+        </div>
+    </div>
 
-    // スコアを送信
-    async function submitScore() {
-        const name = document.getElementById('name-input').value || "ANON";
-        try {
-            await fetch(`${SERVER_URL}/api/save-score`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: name, score: currentScore })
-            });
-            location.reload(); // 送信後リロード
-        } catch (e) { alert("Submit failed"); }
-    }
-</script>
+    <div class="controls">
+        <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        
+        // サーバー設定（社長のURLに変更してください）
+        const SERVER_URL = 'https://your-api-server.com';
+
+        // ゲーム状態
+        let score = 0;
+        let isGameOver = false;
+        
+        // パドル設定
+        const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
+        
+        // ボール設定
+        const ball = { x: 150, y: 200, dx: 3, dy: -3, r: 6 };
+        
+        // ブロック設定
+        const blockRowCount = 5;
+        const blockColumnCount = 6;
+        const blockWidth = 40;
+        const blockHeight = 15;
+        const blockPadding = 5;
+        const blockOffsetTop = 40;
+        const blockOffsetLeft = 15;
+        let blocks = [];
+
+        for(let c=0; c<blockColumnCount; c++) {
+            blocks[c] = [];
+            for(let r=0; r<blockRowCount; r++) {
+                blocks[c][r] = { x: 0, y: 0, status: 1 };
+            }
+        }
+
+        // --- ロジック ---
+
+        function collisionDetection() {
+            for(let c=0; c<blockColumnCount; c++) {
+                for(let r=0; r<blockRowCount; r++) {
+                    let b = blocks[c][r];
+                    if(b.status === 1) {
+                        if(ball.x > b.x && ball.x < b.x + blockWidth && ball.y > b.y && ball.y < b.y + blockHeight) {
+                            ball.dy = -ball.dy;
+                            b.status = 0;
+                            score += 10;
+                            scoreEl.innerText = score;
+                            if(score === blockRowCount * blockColumnCount * 10) {
+                                // 全消しで加速リセットor次ステージ
+                                resetBlocks();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function resetBlocks() {
+            for(let c=0; c<blockColumnCount; c++) {
+                for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
+            }
+            ball.dy *= 1.1; // 難易度アップ
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawPaddle() {
+            ctx.fillStyle = paddle.color;
+            ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+        }
+
+        function drawBlocks() {
+            for(let c=0; c<blockColumnCount; c++) {
+                for(let r=0; r<blockRowCount; r++) {
+                    if(blocks[c][r].status === 1) {
+                        let bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
+                        let by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
+                        blocks[c][r].x = bx;
+                        blocks[c][r].y = by;
+                        ctx.fillStyle = `hsl(${r * 40}, 70%, 50%)`;
+                        ctx.fillRect(bx, by, blockWidth, blockHeight);
+                    }
+                }
+            }
+        }
+
+        function update() {
+            if(isGameOver) return;
+
+            // 壁バウンド
+            if(ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) ball.dx = -ball.dx;
+            if(ball.y + ball.dy < ball.r) ball.dy = -ball.dy;
+            
+            // パドル判定
+            if(ball.y + ball.dy > paddle.y - ball.r) {
+                if(ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+                    ball.dy = -ball.dy;
+                    // 当たる位置で角度を変える
+                    let hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+                    ball.dx = hitPos * 4;
+                } else if(ball.y > canvas.height) {
+                    showRanking();
+                }
+            }
+
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            collisionDetection();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBlocks();
+            drawBall();
+            drawPaddle();
+            update();
+            if(!isGameOver) requestAnimationFrame(draw);
+        }
+
+        // --- ランキング/サーバー連携 ---
+
+        async function showRanking() {
+            isGameOver = true;
+            document.getElementById('ranking-board').style.display = 'block';
+            try {
+                const res = await fetch(`${SERVER_URL}/api/ranking`);
+                const data = await res.json();
+                const list = document.getElementById('rank-list');
+                list.innerHTML = data.map((s, i) => `
+                    <div class="rank-item">
+                        <span>${i+1}. ${s.name}</span>
+                        <span>${s.score}</span>
+                    </div>
+                `).join('');
+            } catch(e) {
+                document.getElementById('rank-list').innerHTML = "RANKING OFFLINE";
+            }
+        }
+
+        async function submitScore() {
+            const name = document.getElementById('name-input').value || "PLAYER";
+            try {
+                await fetch(`${SERVER_URL}/api/save-score`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, score })
+                });
+            } catch(e) {}
+            location.reload();
+        }
+
+        // --- 操作 ---
+        const touchArea = document.getElementById('touch-control');
+        touchArea.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const rect = touchArea.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
+            if(paddle.x < 0) paddle.x = 0;
+            if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+        });
+
+        draw();
+    </script>
+</body>
+</html>
