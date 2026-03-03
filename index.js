@@ -7,14 +7,16 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// --- 1. MongoDB Atlas に接続 ---
-// 社長の接続文字列をここにセット
-// ↓これに丸ごと書き換えてみてください（パスワード・DB名注入済み）
-const MONGO_URL = "mongodb+srv://kmiyazaki_db_user:vhHqN1AMSIoXVwhS@blockranking.xgtpuc8.mongodb.net/RankingDB?retryWrites=true&w=majority";
+// --- 1. MongoDB Atlas に接続 (エラー対策：srvを外した形式) ---
+// パスワードはさきほど確認した vhHqN1AMSIoXVwhS をそのまま入れています
+const MONGO_URL = "mongodb://kmiyazaki_db_user:vhHqN1AMSIoXVwhS@ac-bptp15z-shard-00-00.xgtpuc8.mongodb.net:27017,ac-bptp15z-shard-00-01.xgtpuc8.mongodb.net:27017,ac-bptp15z-shard-00-02.xgtpuc8.mongodb.net:27017/RankingDB?ssl=true&replicaSet=atlas-2y4p74-shard-0&authSource=admin&retryWrites=true&w=majority";
 
 mongoose.connect(MONGO_URL)
-    .then(() => console.log('✅ MongoDB接続成功！'))
-    .catch(err => console.error('❌ 接続失敗:', err));
+    .then(() => console.log('✅ MongoDB接続成功！ついに繋がりました！'))
+    .catch(err => {
+        console.error('❌ 接続失敗。以下のエラーを確認してください:');
+        console.error(err);
+    });
 
 // --- 2. スコアの形を決める ---
 const scoreSchema = new mongoose.Schema({
@@ -24,7 +26,7 @@ const scoreSchema = new mongoose.Schema({
 });
 const Score = mongoose.model('Score', scoreSchema);
 
-// --- 3. API：ランキング取得 (TOP 5) ---
+// --- 3. API：ランキング取得 ---
 app.get('/api/ranking', async (req, res) => {
     try {
         const topScores = await Score.find().sort({ score: -1 }).limit(5);
