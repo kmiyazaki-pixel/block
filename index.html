@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BREAKOUT STRIKE - BATTLE</title>
+    <style>
+        :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --glass: rgba(255, 255, 255, 0.05); }
+        body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+
+        /* ヘッダー・メニュー */
+        .header { margin-top: 10px; text-align: center; }
+        .room-info { font-size: 12px; color: #777; }
+
+        /* 対戦エリア：横並び */
+        #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; }
+        .battle-arena { display: flex; justify-content: center; align-items: flex-end; gap: 10px; width: 98%; }
+
+        /* 自分側のエリア */
+        .player-zone { display: flex; flex-direction: column; align-items: center; }
+        #player-canvas { width: 200px; height: 320px; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); background: #000; border-radius: 8px; }
+
+        /* 相手側のエリア（少し小さめ） */
+        .enemy-zone { display: flex; flex-direction: column; align-items: center; margin-bottom: 5px; }
+        #enemy-canvas { width: 120px; height: 192px; border: 2px solid var(--neon-pink); opacity: 0.6; background: #000; border-radius: 5px; }
+
+        .label { font-size: 10px; margin-bottom: 4px; letter-spacing: 1px; }
+
+        /* 操作パネル：スライド操作を想定 */
+        .controls { width: 100%; height: 150px; background: rgba(255,255,255,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); }
+        .touch-area { width: 90%; height: 80px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 40px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 style="color:var(--neon-blue); font-size: 20px; margin: 0;">BREAKOUT STRIKE</h1>
+        <div class="room-info">ROOM: <span id="room-id">---</span></div>
+    </div>
+
+    <div id="game-container">
+        <div class="battle-arena">
+            <div class="player-zone">
+                <div class="label" style="color:var(--neon-blue)">YOU - LV.<span id="p-lv">1</span></div>
+                <canvas id="player-canvas" width="200" height="320"></canvas>
+            </div>
+
+            <div class="enemy-zone">
+                <div class="label" style="color:var(--neon-pink)">ENEMY</div>
+                <canvas id="enemy-canvas" width="200" height="320"></canvas>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="label">SLIDE TO MOVE PADDLE</div>
+            <div class="touch-area" id="touch-control">TOUCH & DRAG</div>
+        </div>
+    </div>
+
+    <script>
+        const pCanvas = document.getElementById('player-canvas');
+        const pCtx = pCanvas.getContext('2d');
+        const eCanvas = document.getElementById('enemy-canvas');
+        const eCtx = eCanvas.getContext('2d');
+
+        // ゲームオブジェクト
+        const paddle = { x: 80, y: 300, w: 40, h: 8 };
+        const ball = { x: 100, y: 160, dx: 2, dy: -2, r: 4 };
+        let blocks = [];
+
+        // ブロックの初期化 (3x6)
+        function initBlocks() {
+            blocks = [];
+            for(let r=0; r<3; r++) {
+                for(let c=0; c<6; c++) {
+                    blocks.push({ x: c * 30 + 10, y: r * 15 + 30, w: 25, h: 10, active: true });
+                }
+            }
+        }
+
+        // 描画処理
+        function draw() {
+            // 自分の画面
+            pCtx.fillStyle = '#050510';
+            pCtx.fillRect(0, 0, pCanvas.width, pCanvas.height);
+            
+            // パドル
+            pCtx.fillStyle = '#00d2ff';
+            pCtx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+            
+            // ボール
+            pCtx.beginPath();
+            pCtx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+            pCtx.fillStyle = '#fff';
+            pCtx.fill();
+            pCtx.closePath();
+
+            // ブロック
+            blocks.forEach(b => {
+                if(b.active) {
+                    pCtx.fillStyle = '#00ff7f';
+                    pCtx.fillRect(b.x, b.y, b.w, b.h);
+                }
+            });
+
+            // 相手の画面（とりあえず今は背景だけ）
+            eCtx.fillStyle = '#100505';
+            eCtx.fillRect(0, 0, eCanvas.width, eCanvas.height);
+            eCtx.fillStyle = '#555';
+            eCtx.font = "10px Arial";
+            eCtx.fillText("WAITING FOR ENEMY...", 50, 160);
+        }
+
+        // モバイル用タッチ操作
+        const touchArea = document.getElementById('touch-control');
+        touchArea.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = touchArea.getBoundingClientRect();
+            const relativeX = touch.clientX - rect.left;
+            // パドル位置をタッチに合わせて移動
+            paddle.x = (relativeX / rect.width) * pCanvas.width - paddle.w / 2;
+            
+            // 画面端の制限
+            if(paddle.x < 0) paddle.x = 0;
+            if(paddle.x + paddle.w > pCanvas.width) paddle.x = pCanvas.width - paddle.w;
+        });
+
+        initBlocks();
+        setInterval(draw, 1000/60); // 暫定ループ
+    </script>
+</body>
+</html>
