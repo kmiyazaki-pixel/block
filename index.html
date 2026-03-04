@@ -34,6 +34,118 @@
     /* 操作エリア */
     .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
     .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+
+    /* ===== 右上の歯車ボタン ===== */
+    #admin-gear{
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 2000;
+      backdrop-filter: blur(10px);
+    }
+    #admin-gear:hover{
+      border-color: rgba(0,210,255,0.6);
+      box-shadow: 0 0 10px rgba(0,210,255,0.25);
+    }
+
+    /* ===== 管理者モーダル ===== */
+    .admin-modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 2500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .admin-modal{
+      width: min(420px, 92vw);
+      background: rgba(5,5,20,0.95);
+      border: 2px solid rgba(255,0,127,0.7);
+      border-radius: 18px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+    .admin-modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom: 10px;
+    }
+    .admin-title{
+      font-size: 18px;
+      color: #ff007f;
+    }
+    .admin-close{
+      border: none;
+      background: transparent;
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    .admin-section{
+      margin-top: 12px;
+    }
+    .admin-label{
+      font-size: 12px;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    .admin-input{
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: #111;
+      color: #fff;
+      outline: none;
+    }
+    .admin-row{
+      display:flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .admin-btn{
+      flex: 1;
+      padding: 10px;
+      border-radius: 999px;
+      border: 2px solid #0f0;
+      background: transparent;
+      color: #0f0;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .admin-btn:hover{
+      background: #0f0;
+      color: #000;
+    }
+    .admin-btn.danger{
+      border-color: #ff007f;
+      color: #ff007f;
+    }
+    .admin-btn.danger:hover{
+      background: #ff007f;
+      color: #000;
+    }
+    .admin-msg{
+      margin-top: 8px;
+      font-size: 12px;
+      color: #bbb;
+      min-height: 1em;
+    }
+    .admin-hint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: #777;
+    }
   </style>
 </head>
 <body>
@@ -61,6 +173,35 @@
 
   <div class="controls">
     <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
+  </div>
+
+  <!-- 右上：管理者ボタン（歯車） -->
+  <button id="admin-gear" aria-label="admin" onclick="toggleAdminModal()">⚙</button>
+
+  <!-- 管理者モーダル -->
+  <div id="admin-modal" class="admin-modal-backdrop" style="display:none;">
+    <div class="admin-modal">
+      <div class="admin-modal-header">
+        <div class="admin-title">ADMIN</div>
+        <button class="admin-close" onclick="toggleAdminModal(false)">✕</button>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-label">ADMIN TOKEN（このタブを閉じるまで保持）</div>
+        <input type="password" id="admin-token" class="admin-input" placeholder="ADMIN TOKEN" />
+        <div class="admin-row">
+          <button class="admin-btn" onclick="adminLogin()">LOGIN</button>
+          <button class="admin-btn" onclick="adminLogout()">LOGOUT</button>
+        </div>
+        <div id="admin-msg" class="admin-msg"></div>
+      </div>
+
+      <div id="admin-actions" class="admin-section" style="display:none;">
+        <button class="admin-btn danger" onclick="adminClearAll()">🗑 全データ削除</button>
+        <button class="admin-btn" onclick="adminClearName()">🧹 この名前を削除</button>
+        <div class="admin-hint">※「この名前」は端末に保存された名前（playerName）</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -336,6 +477,99 @@
       if (paddle.x < 0) paddle.x = 0;
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     });
+
+    // ===== 管理者モーダル（右上歯車） =====
+    function toggleAdminModal(force) {
+      const modal = document.getElementById('admin-modal');
+      const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
+      modal.style.display = show ? 'flex' : 'none';
+      if (show) {
+        adminSetMsg('');
+        setTimeout(() => document.getElementById('admin-token')?.focus(), 0);
+      }
+    }
+
+    // 背景クリックで閉じる
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('admin-modal');
+      if (!modal || modal.style.display === 'none') return;
+      if (e.target === modal) toggleAdminModal(false);
+    });
+
+    // ESCで閉じる
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleAdminModal(false);
+    });
+
+    // ===== 管理者API（トークンはメモリにだけ保持） =====
+    let ADMIN_SESSION_TOKEN = null;
+
+    function adminSetMsg(msg) {
+      const el = document.getElementById('admin-msg');
+      if (el) el.textContent = msg || '';
+    }
+
+    function adminLogin() {
+      const token = (document.getElementById('admin-token').value || '').trim();
+      if (!token) { adminSetMsg('トークンを入力してね'); return; }
+      ADMIN_SESSION_TOKEN = token;
+      document.getElementById('admin-actions').style.display = 'block';
+      adminSetMsg('ログインOK（このタブを閉じるまで有効）');
+    }
+
+    function adminLogout() {
+      ADMIN_SESSION_TOKEN = null;
+      document.getElementById('admin-actions').style.display = 'none';
+      document.getElementById('admin-token').value = '';
+      adminSetMsg('ログアウトしました');
+    }
+
+    async function adminFetch(path, options = {}) {
+      if (!ADMIN_SESSION_TOKEN) {
+        adminSetMsg('先にLOGINしてね');
+        throw new Error('no admin token');
+      }
+      const headers = {
+        ...(options.headers || {}),
+        'Authorization': `Bearer ${ADMIN_SESSION_TOKEN}`,
+      };
+      const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers });
+      const text = await res.text().catch(() => '');
+      if (!res.ok) {
+        adminSetMsg(`失敗: ${res.status} ${text}`);
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      try { return JSON.parse(text); } catch { return text; }
+    }
+
+    // 全削除（confirm=YES）
+    async function adminClearAll() {
+      const ok = confirm('本当に全データ削除しますか？（戻せません）');
+      if (!ok) return;
+
+      adminSetMsg('削除中...');
+      try {
+        const r = await adminFetch('/api/admin/scores?confirm=YES', { method: 'DELETE' });
+        adminSetMsg(`全削除OK: deletedCount=${r.deletedCount ?? ''}`);
+        showRanking(false);
+      } catch (e) {}
+    }
+
+    // 現在の保存名を削除
+    async function adminClearName() {
+      const saved = (localStorage.getItem('playerName') || '').trim().slice(0, 10);
+      if (!saved) { adminSetMsg('削除する名前がありません（playerName未設定）'); return; }
+
+      const ok = confirm(`"${saved}" を削除しますか？`);
+      if (!ok) return;
+
+      adminSetMsg('削除中...');
+      try {
+        const r = await adminFetch(`/api/admin/scores/${encodeURIComponent(saved)}`, { method: 'DELETE' });
+        adminSetMsg(`削除OK: "${saved}" deletedCount=${r.deletedCount ?? ''}`);
+        showRanking(false);
+      } catch (e) {}
+    }
 
     draw();
   </script>
