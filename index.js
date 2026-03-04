@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -15,7 +17,7 @@ app.use(express.json());
 // --- 1. MongoDB Atlas に接続 (srvを使わない「最短ルート」の接続形式) ---
 // 社長のクラスター専用の「直接の住所」を3本並べた形式です。これでDNSエラーを回避します。
 // URLの末尾に「&tls=true」を追加したバージョンです
-const MONGO_URL = "mongodb://kmiyazaki_db_user:vhHqN1AMSIoXVwhS@ac-bptp15z-shard-00-00.xgtpuc8.mongodb.net:27017,ac-bptp15z-shard-00-01.xgtpuc8.mongodb.net:27017,ac-bptp15z-shard-00-02.xgtpuc8.mongodb.net:27017/RankingDB?ssl=true&replicaSet=atlas-2y4p74-shard-0&authSource=admin&retryWrites=true&w=majority&tls=true";
+const MONGO_URL = process.env.MONGO_URL;
 
 mongoose.connect(MONGO_URL)
     .then(() => console.log('✅ MongoDB接続成功！ついに、ついに突破しました！'))
