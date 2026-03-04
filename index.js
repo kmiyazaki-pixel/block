@@ -1,3 +1,4 @@
+// index.js（管理者削除API入り 完成版 / Render向け）
 require('dotenv').config();
 
 const express = require('express');
@@ -10,20 +11,37 @@ dns.setDefaultResultOrder('ipv4first');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS：GitHub Pages からのアクセスを許可（必要なら自分のURLに変更）
+// CORS: GitHub Pages からのアクセスを許可（必要なら自分のURLに変更）
 app.use(cors({
   origin: ['https://kmiyazaki-pixel.github.io'],
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
 
-// --- 動作確認用（これが返ればサーバーは動いてる） ---
+// --- 動作確認 ---
 app.get('/', (req, res) => res.send('OK: API is running'));
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// --- MongoDB接続（try/catchなしで括弧ミスを減らす） ---
+// --- 管理者認証（Bearerトークン）---
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+
+  if (!process.env.ADMIN_TOKEN) {
+    console.error('❌ ADMIN_TOKEN is missing in env');
+    return res.status(500).json({ error: 'server not configured' });
+  }
+
+  if (token !== process.env.ADMIN_TOKEN) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+
+  next();
+}
+
+// --- MongoDB接続 ---
 const MONGO_URL = process.env.MONGO_URL;
 if (!MONGO_URL) {
   console.error('❌ MONGO_URL is missing in environment variables');
@@ -80,6 +98,33 @@ app.post('/api/save-score', async (req, res) => {
   } catch (err) {
     console.error('❌ /api/save-score error:', err);
     res.status(500).json({ error: '保存失敗' });
+  }
+});
+
+// --- ADMIN: delete all scores（確認付き）---
+// 例: DELETE /api/admin/scores?confirm=YES
+app.delete('/api/admin/scores', requireAdmin, async (req, res) => {
+  try {
+    if (req.query.confirm !== 'YES') {
+      return res.status(400).json({ error: 'add ?confirm=YES' });
+    }
+    const result = await Score.deleteMany({});
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error('❌ delete all error:', err);
+    res.status(500).json({ error: 'delete failed' });
+  }
+});
+
+// --- ADMIN: delete by name ---
+app.delete('/api/admin/scores/:name', requireAdmin, async (req, res) => {
+  try {
+    const name = String(req.params.name || '').trim().slice(0, 10);
+    const result = await Score.deleteMany({ name });
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error('❌ delete by name error:', err);
+    res.status(500).json({ error: 'delete failed' });
   }
 });
 
