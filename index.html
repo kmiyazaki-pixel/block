@@ -49,9 +49,13 @@
     <div id="ranking-board">
       <h2 style="color:var(--neon-pink); margin-top: 0;">GAME OVER</h2>
       <div id="rank-list"></div>
+
+      <!-- 初回だけ表示（保存名がある場合はJSで非表示にする） -->
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
+
       <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
+      <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
     </div>
   </div>
 
@@ -64,9 +68,8 @@
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
 
-    // サーバー設定
-    // 同じドメインで配信するなら ''（空）でOK。別ドメインなら 'https://xxxxx' を入れる。
-    const SERVER_URL = 'https://block-r057.onrender.com'; // 例: https://blockranking-api.onrender.com
+    // サーバー設定（RenderのURL）
+    const SERVER_URL = 'https://block-r057.onrender.com';
 
     // UI
     const rankingBoard = document.getElementById('ranking-board');
@@ -74,14 +77,28 @@
     const nameInput = document.getElementById('name-input');
     const openRankingBtn = document.getElementById('open-ranking-btn');
 
-    // 前回入力した名前を復元
-    const savedName = localStorage.getItem('playerName');
-    if (savedName) nameInput.value = savedName;
-
     // ゲーム状態
     let score = 0;
     let isGameOver = false;        // true の間は draw() が止まる
     let pausedByRanking = false;   // ランキングボタンで一時停止したか
+
+    function updateNameUI() {
+      const saved = localStorage.getItem('playerName');
+      const hasName = !!(saved && saved.trim());
+
+      if (hasName) {
+        nameInput.value = saved;
+        nameInput.style.display = 'none'; // 入力欄を隠す
+        nameInput.disabled = true;
+        nameInput.placeholder = saved;
+      } else {
+        nameInput.style.display = 'block';
+        nameInput.disabled = false;
+      }
+    }
+
+    // 初回ロード時に反映
+    updateNameUI();
 
     // パドル設定
     const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
@@ -178,9 +195,25 @@
           ball.dx = hitPos * 4;
         } else if (ball.y > canvas.height) {
           // GAME OVER
-          pausedByRanking = false; // GAME OVERで止めた場合は再開しない
+          pausedByRanking = false;
           isGameOver = true;
-          showRanking(true); // true = GAME OVER 表示
+
+          const saved = localStorage.getItem('playerName');
+          const hasName = !!(saved && saved.trim());
+
+          if (hasName) {
+            // 名前保存済みなら自動送信してからランキング表示
+            fetch(`${SERVER_URL}/api/save-score`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: saved.trim().slice(0, 10), score })
+            }).finally(() => {
+              showRanking(true);
+            });
+          } else {
+            // 初回は入力させる
+            showRanking(true);
+          }
         }
       }
 
@@ -201,13 +234,12 @@
 
     // --- ランキング/サーバー連携 ---
     async function showRanking(isGameOverMode) {
-      // タイトル表示の切り替え
       const titleEl = rankingBoard.querySelector('h2');
       titleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
 
       rankingBoard.style.display = 'block';
+      updateNameUI();
 
-      // ランキング取得
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking`);
         const data = await res.json();
@@ -232,9 +264,16 @@
       }
     }
 
+    // 初回だけ手動送信（保存名ができたら以降はGAME OVERで自動送信）
     async function submitScore() {
-      const name = (nameInput.value || "PLAYER").trim().slice(0, 10);
-      localStorage.setItem('playerName', name); // 次回のために保存
+      let saved = localStorage.getItem('playerName');
+      let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
+      name = name.slice(0, 10) || "PLAYER";
+
+      if (!saved || !saved.trim()) {
+        localStorage.setItem('playerName', name);
+        updateNameUI();
+      }
 
       try {
         await fetch(`${SERVER_URL}/api/save-score`, {
@@ -247,18 +286,17 @@
       location.reload();
     }
 
-    // ランキングボタン：停止して表示（ゲーム継続したいなら isGameOver=true を消せばOK）
+    // ランキングボタン：停止して表示
     openRankingBtn.addEventListener('click', () => {
       pausedByRanking = true;
-      isGameOver = true;           // 一時停止
-      showRanking(false);          // GAME OVER ではない
+      isGameOver = true;
+      showRanking(false);
     });
 
     // CLOSE：ランキングを閉じて再開（RANKINGボタンで止めたときだけ）
     function closeRanking() {
       rankingBoard.style.display = 'none';
 
-      // GAME OVER表示中は再開しない（submit&replay想定）
       const titleEl = rankingBoard.querySelector('h2');
       const isActuallyGameOver = titleEl.textContent === "GAME OVER";
       if (isActuallyGameOver) return;
@@ -268,6 +306,15 @@
         isGameOver = false;
         requestAnimationFrame(draw);
       }
+    }
+
+    // 名前変更（保存名を消して入力欄を再表示）
+    function changeName() {
+      localStorage.removeItem('playerName');
+      nameInput.value = '';
+      nameInput.style.display = 'block';
+      nameInput.disabled = false;
+      nameInput.focus();
     }
 
     // --- 操作（スマホ：タッチドラッグ） ---
@@ -281,7 +328,7 @@
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     }, { passive: false });
 
-    // --- 操作（PC：マウス移動でも動くように） ---
+    // --- 操作（PC：マウス移動） ---
     touchArea.addEventListener('mousemove', (e) => {
       const rect = touchArea.getBoundingClientRect();
       const x = e.clientX - rect.left;
