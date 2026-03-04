@@ -12,6 +12,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+app.get('/', (req, res) => {
+  res.send('OK: API is running');
+});
+
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
 app.use(express.json());
 
 // --- 1. MongoDB Atlas に接続（非SRV・3ホスト直指定） ---
