@@ -26,6 +26,7 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 // --- 管理者認証（Bearerトークン）---
 function requireAdmin(req, res, next) {
+  console.log('ADMIN_TOKEN set?', !!process.env.ADMIN_TOKEN);
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
 
