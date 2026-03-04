@@ -1,3 +1,6 @@
+console.log('AUTH header present?', !!req.headers.authorization);
+console.log('AUTH header starts Bearer?', (req.headers.authorization || '').startsWith('Bearer '));
+
 // index.js（管理者削除API入り 完成版 / Render向け）
 require('dotenv').config();
 
