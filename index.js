@@ -1,7 +1,5 @@
-console.log('AUTH header present?', !!req.headers.authorization);
-console.log('AUTH header starts Bearer?', (req.headers.authorization || '').startsWith('Bearer '));
-
 // index.js（管理者削除API入り 完成版 / Render向け）
+// ※ デバッグログ（Authorizationが届いてるか）入り：原因切り分け用
 require('dotenv').config();
 
 const express = require('express');
@@ -29,7 +27,11 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 // --- 管理者認証（Bearerトークン）---
 function requireAdmin(req, res, next) {
+  // デバッグ（トークン文字列そのものは出さない）
   console.log('ADMIN_TOKEN set?', !!process.env.ADMIN_TOKEN);
+  console.log('AUTH header present?', !!req.headers.authorization);
+  console.log('AUTH header starts Bearer?', (req.headers.authorization || '').startsWith('Bearer '));
+
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
 
