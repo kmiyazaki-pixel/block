@@ -46,10 +46,12 @@ const Score = mongoose.model('Score', scoreSchema);
 app.get('/api/ranking', async (req, res) => {
   try {
     const topScores = await Score.find()
-      .sort({ score: -1, date: 1 }) // 同点なら古い方を上に（好みで変えてOK）
+      .sort({ score: -1, date: 1 })
       .limit(5);
+
     res.json(topScores);
   } catch (err) {
+    console.error('❌ /api/ranking error:', err); // ★追加
     res.status(500).json({ error: "取得失敗" });
   }
 });
@@ -59,19 +61,24 @@ app.post('/api/save-score', async (req, res) => {
   try {
     let { name, score } = req.body;
 
-    // 最低限のチェック
     if (typeof name !== 'string') name = "PLAYER";
     if (!Number.isFinite(score)) score = 0;
 
     name = name.trim().slice(0, 10) || "PLAYER";
     score = Math.max(0, Math.floor(score));
 
-    // 同名があれば「高い時だけ更新」、なければ新規作成
     await Score.findOneAndUpdate(
       { name },
       { $max: { score }, $set: { date: new Date() } },
       { upsert: true, new: true }
     );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ /api/save-score error:', err); // ★追加
+    res.status(500).json({ error: "保存失敗" });
+  }
+});
 
     res.json({ success: true });
   } catch (err) {
