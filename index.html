@@ -9,7 +9,7 @@
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
     /* ヘッダー */
-    .header { margin-top: 20px; text-align: center; }
+    .header { margin-top: 20px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:12px; }
     .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
     /* メインエリア */
@@ -28,6 +28,9 @@
     .menu-btn { width: 100%; padding: 15px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
+    /* ヘッダー用のボタンだけ幅調整 */
+    #open-ranking-btn { max-width: 300px; width: 300px; }
+
     /* 操作エリア */
     .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
     .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
@@ -37,6 +40,7 @@
 
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
+    <button class="menu-btn" id="open-ranking-btn">RANKING</button>
   </div>
 
   <div id="game-container">
@@ -47,6 +51,7 @@
       <div id="rank-list"></div>
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
       <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
+      <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
     </div>
   </div>
 
@@ -63,8 +68,11 @@
     // 同じドメインで配信するなら ''（空）でOK。別ドメインなら 'https://xxxxx' を入れる。
     const SERVER_URL = '';
 
-    // 名前入力
+    // UI
+    const rankingBoard = document.getElementById('ranking-board');
+    const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
+    const openRankingBtn = document.getElementById('open-ranking-btn');
 
     // 前回入力した名前を復元
     const savedName = localStorage.getItem('playerName');
@@ -72,7 +80,8 @@
 
     // ゲーム状態
     let score = 0;
-    let isGameOver = false;
+    let isGameOver = false;        // true の間は draw() が止まる
+    let pausedByRanking = false;   // ランキングボタンで一時停止したか
 
     // パドル設定
     const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
@@ -168,7 +177,10 @@
           const hitPos = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
           ball.dx = hitPos * 4;
         } else if (ball.y > canvas.height) {
-          showRanking();
+          // GAME OVER
+          pausedByRanking = false; // GAME OVERで止めた場合は再開しない
+          isGameOver = true;
+          showRanking(true); // true = GAME OVER 表示
         }
       }
 
@@ -188,21 +200,19 @@
     }
 
     // --- ランキング/サーバー連携 ---
-    async function showRanking() {
-      isGameOver = true;
-      document.getElementById('ranking-board').style.display = 'block';
+    async function showRanking(isGameOverMode) {
+      // タイトル表示の切り替え
+      const titleEl = rankingBoard.querySelector('h2');
+      titleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
 
-      // GAME OVER した瞬間に、保存済みの名前を確実に入れておく
-      const saved = localStorage.getItem('playerName');
-      if (saved && !nameInput.value) nameInput.value = saved;
+      rankingBoard.style.display = 'block';
 
+      // ランキング取得
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking`);
         const data = await res.json();
 
-        const list = document.getElementById('rank-list');
-        list.innerHTML = ''; // いったんクリア
-
+        rankList.innerHTML = '';
         data.forEach((s, i) => {
           const row = document.createElement('div');
           row.className = 'rank-item';
@@ -215,10 +225,10 @@
 
           row.appendChild(left);
           row.appendChild(right);
-          list.appendChild(row);
+          rankList.appendChild(row);
         });
       } catch (e) {
-        document.getElementById('rank-list').textContent = "RANKING OFFLINE";
+        rankList.textContent = "RANKING OFFLINE";
       }
     }
 
@@ -237,9 +247,31 @@
       location.reload();
     }
 
+    // ランキングボタン：停止して表示（ゲーム継続したいなら isGameOver=true を消せばOK）
+    openRankingBtn.addEventListener('click', () => {
+      pausedByRanking = true;
+      isGameOver = true;           // 一時停止
+      showRanking(false);          // GAME OVER ではない
+    });
+
+    // CLOSE：ランキングを閉じて再開（RANKINGボタンで止めたときだけ）
+    function closeRanking() {
+      rankingBoard.style.display = 'none';
+
+      // GAME OVER表示中は再開しない（submit&replay想定）
+      const titleEl = rankingBoard.querySelector('h2');
+      const isActuallyGameOver = titleEl.textContent === "GAME OVER";
+      if (isActuallyGameOver) return;
+
+      if (pausedByRanking) {
+        pausedByRanking = false;
+        isGameOver = false;
+        requestAnimationFrame(draw);
+      }
+    }
+
     // --- 操作（スマホ：タッチドラッグ） ---
     const touchArea = document.getElementById('touch-control');
-
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
       const rect = touchArea.getBoundingClientRect();
@@ -249,7 +281,7 @@
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     }, { passive: false });
 
-    // --- 操作（PC：マウス移動でも動くように）任意 ---
+    // --- 操作（PC：マウス移動でも動くように） ---
     touchArea.addEventListener('mousemove', (e) => {
       const rect = touchArea.getBoundingClientRect();
       const x = e.clientX - rect.left;
