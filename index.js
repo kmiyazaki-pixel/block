@@ -5,43 +5,47 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dns = require('dns');
 
-// Node.jsの最新仕様によるDNSの詰まりを解消（IPv4優先）
 dns.setDefaultResultOrder('ipv4first');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
-app.get('/', (req, res) => {
-  res.send('OK: API is running');
-});
+// CORS：GitHub Pages からのアクセスを許可（必要なら自分のURLに変更）
+app.use(cors({
+  origin: ['https://kmiyazaki-pixel.github.io'],
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+}));
 
-app.get('/health', (req, res) => {
-  res.json({ ok: true });
-});
 app.use(express.json());
 
-// --- 1. MongoDB Atlas に接続（非SRV・3ホスト直指定） ---
+// --- 動作確認用（これが返ればサーバーは動いてる） ---
+app.get('/', (req, res) => res.send('OK: API is running'));
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+// --- MongoDB接続（try/catchなしで括弧ミスを減らす） ---
 const MONGO_URL = process.env.MONGO_URL;
+if (!MONGO_URL) {
+  console.error('❌ MONGO_URL is missing in environment variables');
+}
 
 mongoose.connect(MONGO_URL, {
   serverSelectionTimeoutMS: 15000,
   family: 4,
 })
-  .then(() => console.log('✅ MongoDB接続成功！'))
-  .catch((err) => {
-    console.error('❌ MongoDB接続失敗:', err);
-  });
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// --- 2. スコアの形（スキーマ） ---
+// --- Schema ---
 const scoreSchema = new mongoose.Schema({
   name: { type: String, required: true },
   score: { type: Number, required: true },
   date: { type: Date, default: Date.now }
 });
+
 const Score = mongoose.model('Score', scoreSchema);
 
-// --- 3. API：ランキング取得 (TOP 5) ---
+// --- API: ranking ---
 app.get('/api/ranking', async (req, res) => {
   try {
     const topScores = await Score.find()
@@ -50,20 +54,20 @@ app.get('/api/ranking', async (req, res) => {
 
     res.json(topScores);
   } catch (err) {
-    console.error('❌ /api/ranking error:', err); // ★追加
-    res.status(500).json({ error: "取得失敗" });
+    console.error('❌ /api/ranking error:', err);
+    res.status(500).json({ error: '取得失敗' });
   }
 });
 
-// --- 4. API：スコア保存（同じ名前は自己ベストだけ残す） ---
+// --- API: save score (same name keeps best) ---
 app.post('/api/save-score', async (req, res) => {
   try {
     let { name, score } = req.body;
 
-    if (typeof name !== 'string') name = "PLAYER";
+    if (typeof name !== 'string') name = 'PLAYER';
     if (!Number.isFinite(score)) score = 0;
 
-    name = name.trim().slice(0, 10) || "PLAYER";
+    name = name.trim().slice(0, 10) || 'PLAYER';
     score = Math.max(0, Math.floor(score));
 
     await Score.findOneAndUpdate(
@@ -74,17 +78,11 @@ app.post('/api/save-score', async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    console.error('❌ /api/save-score error:', err); // ★追加
-    res.status(500).json({ error: "保存失敗" });
-  }
-});
-
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: "保存失敗" });
+    console.error('❌ /api/save-score error:', err);
+    res.status(500).json({ error: '保存失敗' });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 サーバー起動中: http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
