@@ -28,10 +28,9 @@ mongoose.connect(MONGO_URL, {
   serverSelectionTimeoutMS: 15000,
   family: 4,
 })
-  .then(() => console.log('✅ MongoDB接続成功！ついに、ついに突破しました！'))
-  .catch(err => {
-    console.error('❌ 接続失敗。以下の内容を教えてください:');
-    console.error(err.message);
+  .then(() => console.log('✅ MongoDB接続成功！'))
+  .catch((err) => {
+    console.error('❌ MongoDB接続失敗:', err);
   });
 
 // --- 2. スコアの形（スキーマ） ---
