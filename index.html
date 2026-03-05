@@ -43,7 +43,6 @@
       margin: 10px 0 14px;
     }
 
-    /* Pause */
     #pause-btn{
       position: absolute;
       top: 8px;
@@ -62,67 +61,8 @@
     #pause-panel{ border-color: rgba(255,255,255,0.18); }
     #pause-panel .menu-btn{ margin-top: 10px; }
 
-    /* Game Over (入力) */
     #ranking-panel { border-color: rgba(255,0,127,0.55); }
-    #rank-list{ max-height: 220px; overflow: auto; padding-right: 6px; text-align:left; }
-    .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; }
     #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
-
-    /* ★ 送信後のフルスクリーンランキング */
-    #ranking-fullscreen{
-      display:none;
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 5, 20, 0.98);
-      z-index: 5000;
-      padding: 18px 14px;
-      box-sizing: border-box;
-    }
-    .rf-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .rf-title{
-      font-size: 18px;
-      color: var(--neon-pink);
-      letter-spacing: 1px;
-    }
-    .rf-sub{
-      font-size: 12px;
-      color: rgba(255,255,255,0.65);
-      margin-top: 2px;
-    }
-    .rf-btn{
-      padding: 10px 12px;
-      border-radius: 999px;
-      border: 2px solid var(--neon-green);
-      background: transparent;
-      color: var(--neon-green);
-      font-weight: 900;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .rf-btn:hover{ background: var(--neon-green); color:#000; }
-
-    .rf-list{
-      margin-top: 12px;
-      max-height: calc(100vh - 120px);
-      overflow: auto;
-      border: 1px solid rgba(255,255,255,0.10);
-      border-radius: 14px;
-      padding: 12px;
-    }
-    .rf-item{
-      display:flex;
-      justify-content:space-between;
-      padding: 10px 6px;
-      border-bottom: 1px solid rgba(255,255,255,0.08);
-      font-size: 14px;
-    }
-    .rf-item:last-child{ border-bottom: none; }
 
     .toast {
       position:absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
@@ -149,7 +89,7 @@
       <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10</div>
     </div>
 
-    <!-- Tutorial (one-time) -->
+    <!-- Tutorial -->
     <div id="tutorial-panel" class="panel">
       <h2 style="color:#fff;">HOW TO PLAY</h2>
       <div class="tip">
@@ -169,30 +109,15 @@
       <button class="menu-btn" id="restart-btn">RESTART</button>
     </div>
 
-    <!-- Game Over + Input -->
+    <!-- Game Over + Input（ランキング一覧は出さない） -->
     <div id="ranking-panel" class="panel">
       <h2 style="color:var(--neon-pink);">GAME OVER</h2>
       <div class="sub">Your score: <span id="final-score">0</span></div>
-
-      <div id="rank-list"></div>
-
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
       <button class="menu-btn" id="submit-btn">SUBMIT</button>
     </div>
 
     <div class="toast" id="toast"></div>
-  </div>
-
-  <!-- ★ フルスクリーンランキング -->
-  <div id="ranking-fullscreen">
-    <div class="rf-head">
-      <div>
-        <div class="rf-title">RANKING</div>
-        <div class="rf-sub">Top 100</div>
-      </div>
-      <button class="rf-btn" id="play-again-btn">PLAY AGAIN</button>
-    </div>
-    <div class="rf-list" id="rf-list"></div>
   </div>
 
   <div class="controls">
@@ -222,13 +147,8 @@
 
     const rankingPanel = document.getElementById('ranking-panel');
     const finalScoreEl = document.getElementById('final-score');
-    const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
     const submitBtn = document.getElementById('submit-btn');
-
-    const fullscreen = document.getElementById('ranking-fullscreen');
-    const rfList = document.getElementById('rf-list');
-    const playAgainBtn = document.getElementById('play-again-btn');
 
     const touchArea = document.getElementById('touch-control');
 
@@ -239,15 +159,12 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
     }
 
-    // ===== 状態 =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
 
-    // LIFE=2
     let lives = 2;
 
-    // Score / Combo / Fever
     let score = 0;
     let combo = 0;
     let comboMul = 1.0;
@@ -258,11 +175,9 @@
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
-    // Paddle
     const paddleBaseW = 60;
     const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // Ball size: 20 -> 10 minimum
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
     const BALL_R_MIN = 10;
@@ -289,7 +204,6 @@
       syncBallRadius();
     }
 
-    // Blocks (8x6)
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -311,17 +225,14 @@
     function resetBlocks() {
       for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
     }
-
     function isAllCleared() {
       for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
       return true;
     }
 
-    // Powerups: WIDE / MULTI / PIERCE
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
-
     const PowerType = { WIDE:'WIDE', MULTI:'MULTI', PIERCE:'PIERCE' };
 
     function maybeDropPowerup(x, y) {
@@ -362,7 +273,6 @@
       }
     }
 
-    // ===== スコア/フィーバー =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -395,7 +305,6 @@
       }
     }
 
-    // ===== 描画 =====
     function drawPaddle() {
       ctx.fillStyle = paddle.color;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
@@ -443,15 +352,17 @@
       });
     }
 
-    // ===== 壁めり込み修正：反射後に位置を押し戻す =====
+    function clampPaddle() {
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+    }
+
     function clampBallInside(b) {
       if (b.x < b.r) b.x = b.r;
       if (b.x > canvas.width - b.r) b.x = canvas.width - b.r;
       if (b.y < b.r) b.y = b.r;
-      // 下方向は落下判定があるのでここではクランプしない
     }
 
-    // ===== 衝突 =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -495,11 +406,6 @@
       }
     }
 
-    function clampPaddle() {
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
-    }
-
     function loseLife() {
       lives -= 1;
       resetToSingleBall();
@@ -520,37 +426,23 @@
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        // 次フレーム位置
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
 
-        // 左右壁
-        if (nx > canvas.width - b.r) {
-          b.dx = -Math.abs(b.dx);
-          nx = canvas.width - b.r; // ★押し戻し
-        } else if (nx < b.r) {
-          b.dx = Math.abs(b.dx);
-          nx = b.r; // ★押し戻し
-        }
+        if (nx > canvas.width - b.r) { b.dx = -Math.abs(b.dx); nx = canvas.width - b.r; }
+        else if (nx < b.r) { b.dx = Math.abs(b.dx); nx = b.r; }
 
-        // 上壁
-        if (ny < b.r) {
-          b.dy = Math.abs(b.dy);
-          ny = b.r; // ★押し戻し
-        }
+        if (ny < b.r) { b.dy = Math.abs(b.dy); ny = b.r; }
 
-        // パドル/落下
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
-
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
             combo = 0;
             comboMul = 1.0;
 
-            // 反射後の位置補正
             ny = paddle.y - b.r;
           } else if (b.y > canvas.height) {
             balls.splice(i, 1);
@@ -558,11 +450,9 @@
           }
         }
 
-        // 移動確定
         b.x = nx;
         b.y = ny;
-
-        clampBallInside(b); // 念のため
+        clampBallInside(b);
 
         collisionDetectionForBall(b);
       }
@@ -593,7 +483,6 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== UI切替 =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -602,35 +491,6 @@
       if (panelEl) panelEl.style.display = 'block';
     }
 
-    function showFullscreenRanking() {
-      fullscreen.style.display = 'block';
-    }
-    function hideFullscreenRanking() {
-      fullscreen.style.display = 'none';
-    }
-
-    async function renderFullscreenRanking() {
-      rfList.innerHTML = '<div class="rf-item"><span>Loading...</span><span></span></div>';
-      try {
-        const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
-        const data = await res.json();
-        rfList.innerHTML = '';
-        data.forEach((s, i) => {
-          const row = document.createElement('div');
-          row.className = 'rf-item';
-          const left = document.createElement('span');
-          left.textContent = `${i + 1}. ${s.name}`;
-          const right = document.createElement('span');
-          right.textContent = String(s.score);
-          row.append(left, right);
-          rfList.appendChild(row);
-        });
-      } catch (e) {
-        rfList.innerHTML = '<div class="rf-item"><span>RANKING OFFLINE</span><span></span></div>';
-      }
-    }
-
-    // ===== Start / End =====
     function startGame() {
       score = 0;
       lives = 2;
@@ -667,27 +527,8 @@
 
       const savedName = localStorage.getItem('playerName');
       if (savedName) nameInput.value = savedName;
-
-      try {
-        const res = await fetch(`${SERVER_URL}/api/ranking?limit=20`);
-        const data = await res.json();
-        rankList.innerHTML = '';
-        data.forEach((s, i) => {
-          const row = document.createElement('div');
-          row.className = 'rank-item';
-          const left = document.createElement('span');
-          left.textContent = `${i + 1}. ${s.name}`;
-          const right = document.createElement('span');
-          right.textContent = String(s.score);
-          row.append(left, right);
-          rankList.appendChild(row);
-        });
-      } catch (e) {
-        rankList.textContent = 'RANKING OFFLINE';
-      }
     }
 
-    // ===== Pause =====
     function pauseGame() {
       if (!running || isGameOver) return;
       isPaused = true;
@@ -717,13 +558,9 @@
     resumeBtn.addEventListener('click', resumeGame);
     restartBtn.addEventListener('click', restartFromPause);
 
-    // ===== Tutorial =====
-    function shouldShowTutorial() {
-      return localStorage.getItem('tutorialSeen') !== '1';
-    }
-    function markTutorialSeen() {
-      localStorage.setItem('tutorialSeen', '1');
-    }
+    function shouldShowTutorial() { return localStorage.getItem('tutorialSeen') !== '1'; }
+    function markTutorialSeen() { localStorage.setItem('tutorialSeen', '1'); }
+
     function onStartPressed() {
       if (shouldShowTutorial()) showPanel(tutorialPanel);
       else { showPanel(null); startGame(); }
@@ -734,7 +571,6 @@
       startGame();
     });
 
-    // ===== Submit => Fullscreen Ranking =====
     async function submitScore() {
       const name = (nameInput.value || 'PLAYER').trim().slice(0, 10) || 'PLAYER';
       localStorage.setItem('playerName', name);
@@ -753,19 +589,13 @@
       submitBtn.disabled = false;
       submitBtn.textContent = 'SUBMIT';
 
-      // ★ 送信後：入力モーダルを閉じて、全画面ランキングへ
-      showPanel(null);
-      rankingPanel.style.display = 'none';
-      await renderFullscreenRanking();
-      showFullscreenRanking();
+      // 送信後：STARTへ
+      showPanel(startPanel);
     }
 
-    playAgainBtn.addEventListener('click', () => {
-      hideFullscreenRanking();
-      showPanel(startPanel);
-    });
+    // 操作：PCは押してる間 / スマホはこすってる間
+    let isMouseDown = false;
 
-    // ===== 操作 =====
     function movePaddleByClientX(clientX) {
       const rect = touchArea.getBoundingClientRect();
       const x = clientX - rect.left;
@@ -773,21 +603,30 @@
       paddle.x = ratio * canvas.width - paddle.w/2;
       clampPaddle();
     }
+
+    touchArea.addEventListener('touchstart', (e) => {
+      movePaddleByClientX(e.touches[0].clientX);
+    }, { passive: true });
+
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
       movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
+
+    touchArea.addEventListener('mousedown', (e) => {
+      isMouseDown = true;
+      movePaddleByClientX(e.clientX);
+    });
+    window.addEventListener('mouseup', () => { isMouseDown = false; });
     touchArea.addEventListener('mousemove', (e) => {
+      if (!isMouseDown) return;
       movePaddleByClientX(e.clientX);
     });
 
-    // ===== Bind =====
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
-    // 初期
     showPanel(startPanel);
-    hideFullscreenRanking();
   </script>
 </body>
 </html>
