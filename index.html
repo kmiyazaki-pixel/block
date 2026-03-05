@@ -73,9 +73,6 @@
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    .menu-btn.pink { color: var(--neon-pink); border-color: var(--neon-pink); }
-    .menu-btn.pink:hover { background: var(--neon-pink); color:#000; }
-
     #open-ranking-btn { max-width: 300px; width: min(300px, 92vw); }
 
     .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
@@ -158,7 +155,7 @@
       <div class="hud-item"><span class="hud-label">LIFE</span><span class="hud-value" id="life">3</span></div>
       <div class="hud-item"><span class="hud-label">COMBO</span><span class="hud-value" id="combo">x1.0</span></div>
       <div class="hud-item"><span class="hud-label">MULTI</span><span class="hud-value" id="balls">1</span></div>
-      <div class="hud-item"><span class="hud-label">SPEED</span><span class="hud-value" id="speed">1.0</span></div>
+      <div class="hud-item"><span class="hud-label">BALL</span><span class="hud-value" id="ballsize">10</span></div>
 
       <div class="fever-wrap">
         <span class="hud-label">FEVER</span>
@@ -180,9 +177,6 @@
       <button class="menu-btn" id="submit-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
-
-      <!-- 復活（1回だけ） -->
-      <button class="menu-btn pink" style="margin-top:10px; display:none;" id="revive-btn" onclick="revive()">REVIVE (-50% SCORE)</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -255,7 +249,7 @@
     const lifeEl = document.getElementById('life');
     const comboEl = document.getElementById('combo');
     const ballsEl = document.getElementById('balls');
-    const speedEl = document.getElementById('speed');
+    const ballSizeEl = document.getElementById('ballsize');
     const feverFillEl = document.getElementById('fever-fill');
     const feverTagEl = document.getElementById('fever-tag');
 
@@ -273,22 +267,20 @@
     const nameInput = document.getElementById('name-input');
     const openRankingBtn = document.getElementById('open-ranking-btn');
     const rankTitleEl = document.getElementById('rank-title');
-    const reviveBtn = document.getElementById('revive-btn');
 
-    // ====== ④ライフ制＋復活 ======
+    // ====== ライフ制 ======
     let lives = 3;
     const MAX_LIVES = 3;
-    let reviveUsed = false;
 
     // ====== スコア/コンボ ======
     let score = 0;
-    let combo = 0;          // 連続破壊数（パドルに当たったらリセット）
-    let comboMul = 1.0;     // 表示用
+    let combo = 0;
+    let comboMul = 1.0;
 
-    // ====== ②フィーバー ======
-    let fever = 0;          // 0..100
+    // ====== フィーバー ======
+    let fever = 0;
     let feverActive = false;
-    let feverEndAt = 0;     // performance.now()で管理
+    let feverEndAt = 0;
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
@@ -300,17 +292,34 @@
     const paddleBaseW = 50;
     const paddle = { x: 125, y: 370, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // ====== ボール（③マルチボール対応） ======
+    // ====== ボール（サイズ可変） ======
     const baseBallSpeed = 3.1;
-    let speedScale = 1.0; // SPEED HUD用
+
+    // ボールサイズ：最初大きく、スコアが増えると小さく
+    const BALL_R_MAX = 10;  // 最初
+    const BALL_R_MIN = 4;   // 最小
+    const BALL_SHRINK_PER_SCORE = 300; // 300点で半径1減（調整OK）
+
+    function calcBallRadius() {
+      const shrink = Math.floor(score / BALL_SHRINK_PER_SCORE);
+      return Math.max(BALL_R_MIN, BALL_R_MAX - shrink);
+    }
 
     function makeBall(x, y, dx, dy) {
-      return { x, y, dx, dy, r: 6, pierceUntil: 0 }; // pierceUntil: timestamp
+      return { x, y, dx, dy, r: BALL_R_MAX, pierceUntil: 0 };
     }
+
     let balls = [ makeBall(150, 200, baseBallSpeed, -baseBallSpeed) ];
+
+    function syncBallRadius() {
+      const r = calcBallRadius();
+      balls.forEach(b => b.r = r);
+      ballSizeEl.innerText = String(r);
+    }
 
     function resetToSingleBall() {
       balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
+      syncBallRadius();
     }
 
     // ====== ブロック ======
@@ -326,23 +335,20 @@
       blocks = [];
       for(let c=0; c<blockColumnCount; c++) {
         blocks[c] = [];
-        for(let r=0; r<blockRowCount; r++) {
-          blocks[c][r] = { x: 0, y: 0, status: 1 };
-        }
+        for(let r=0; r<blockRowCount; r++) blocks[c][r] = { x: 0, y: 0, status: 1 };
       }
     }
     initBlocks();
 
-    // ====== ③パワーアップ（落下アイテム） ======
-    const powerups = []; // {x,y,vy,type,activeUntil?}
-    const POWER_CHANCE = 0.18; // 18%で落ちる
+    // ====== パワーアップ（SLOW削除版） ======
+    const powerups = []; // {x,y,vy,type}
+    const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
 
     const PowerType = {
-      WIDE: 'WIDE',     // パドル幅UP
-      SLOW: 'SLOW',     // 速度DOWN
-      MULTI: 'MULTI',   // マルチボール
-      PIERCE: 'PIERCE', // 貫通
+      WIDE: 'WIDE',
+      MULTI: 'MULTI',
+      PIERCE: 'PIERCE',
     };
 
     function maybeDropPowerup(x, y) {
@@ -350,9 +356,8 @@
 
       const roll = Math.random();
       let type = PowerType.WIDE;
-      if (roll < 0.40) type = PowerType.WIDE;
-      else if (roll < 0.65) type = PowerType.SLOW;
-      else if (roll < 0.85) type = PowerType.MULTI;
+      if (roll < 0.50) type = PowerType.WIDE;
+      else if (roll < 0.80) type = PowerType.MULTI;
       else type = PowerType.PIERCE;
 
       powerups.push({ x, y, vy: POWER_VY, type });
@@ -360,17 +365,13 @@
 
     function powerLabel(type) {
       if (type === PowerType.WIDE) return 'W';
-      if (type === PowerType.SLOW) return 'S';
       if (type === PowerType.MULTI) return 'M';
       if (type === PowerType.PIERCE) return 'P';
       return '?';
     }
 
-    // 効果管理（シンプルにタイマーで戻す）
     let wideTimer = null;
-    let slowTimer = null;
     const WIDE_MS = 8000;
-    const SLOW_MS = 6000;
     const PIERCE_MS = 6000;
 
     function applyPower(type) {
@@ -385,26 +386,16 @@
         }, WIDE_MS);
       }
 
-      if (type === PowerType.SLOW) {
-        clearTimeout(slowTimer);
-        speedScale = 0.78;
-        toast('POWER: SLOW');
-        slowTimer = setTimeout(() => {
-          speedScale = 1.0;
-        }, SLOW_MS);
-      }
-
       if (type === PowerType.MULTI) {
         toast('POWER: MULTI');
-        // 現在の先頭ボールを基準に2個追加
         const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
         balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
+        syncBallRadius();
       }
 
       if (type === PowerType.PIERCE) {
         toast('POWER: PIERCE');
-        // 全ボールに貫通時間を付与
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
       }
     }
@@ -428,7 +419,6 @@
     function drawBall(b) {
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-      // 貫通中は少しピンク寄り
       const pierceOn = performance.now() < b.pierceUntil;
       ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
       ctx.fill();
@@ -473,17 +463,18 @@
       });
     }
 
-    // ====== ①コンボ/②フィーバー計算 ======
+    // ====== スコア/フィーバー ======
     function addScore(base) {
-      // comboMul: 連続破壊で少しずつ上がる（上限つき）
-      comboMul = Math.min(1 + combo * 0.08, 2.5); // 0破壊=1.0, 10連=1.8, 上限2.5
+      comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
       const add = Math.floor(base * comboMul * feverMul);
 
       score += add;
       scoreEl.innerText = score;
-
       comboEl.innerText = `x${(comboMul * feverMul).toFixed(1)}`;
+
+      // スコアに応じてボールサイズ更新
+      syncBallRadius();
     }
 
     function addFever(amount) {
@@ -511,7 +502,7 @@
       }
     }
 
-    // ====== 衝突判定（マルチボール対応） ======
+    // ====== 衝突（ボール） ======
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -520,29 +511,17 @@
           let blk = blocks[c][r];
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-              // ヒット
               blk.status = 0;
-
-              // 反射（貫通中は反射しない）
               if (!pierceOn) b.dy = -b.dy;
 
-              // ①コンボ加算（ブロック破壊が続くほど）
               combo += 1;
-
-              // ②フィーバーゲージ加算
               addFever(8);
-
-              // スコア加算（コンボ倍率＋フィーバー倍率）
               addScore(10);
 
-              // ③パワーアップ落下
               maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
 
-              // 全消しで次ウェーブ（速度少しUP）
               if (isAllCleared()) {
                 resetBlocks();
-                // 難易度UP：速度少し上げる（ただし上げすぎない）
-                speedScale = Math.min(speedScale * 1.06, 1.35);
                 toast('NEXT WAVE!');
               }
             }
@@ -552,28 +531,20 @@
     }
 
     function isAllCleared() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) {
-          if (blocks[c][r].status === 1) return false;
-        }
-      }
+      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
       return true;
     }
 
     function resetBlocks() {
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
-      }
+      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
     }
 
-    // ====== ③パワーアップ更新/取得 ======
+    // ====== パワーアップ更新 ======
     function updatePowerups() {
-      // 落下
       for (let i = powerups.length - 1; i >= 0; i--) {
         const p = powerups[i];
         p.y += p.vy;
 
-        // パドル取得判定
         const hit = (p.y >= paddle.y - 10 && p.y <= paddle.y + paddle.h + 10 &&
                      p.x >= paddle.x && p.x <= paddle.x + paddle.w);
         if (hit) {
@@ -581,90 +552,70 @@
           powerups.splice(i, 1);
           continue;
         }
-
-        // 画面外
-        if (p.y > canvas.height + 20) {
-          powerups.splice(i, 1);
-        }
+        if (p.y > canvas.height + 20) powerups.splice(i, 1);
       }
     }
 
-    // ====== ④ミス処理（ライフ消費） ======
+    // ====== ミス（ライフ） ======
     function loseLife() {
       lives -= 1;
       lifeEl.innerText = lives;
 
-      // パワーアップ落下はリセットしても良い（ここでは残す/好み）
       resetToSingleBall();
       paddle.x = (canvas.width - paddle.w) / 2;
 
-      // コンボもリセット（ミスは痛い）
       combo = 0;
       comboMul = 1.0;
-      comboEl.innerText = 'x1.0';
+      comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
 
       toast(`MISS! LIFE ${lives}`);
 
       if (lives <= 0) {
-        // 0になったらゲームオーバー表示（復活の可能性）
         isGameOver = true;
         showRanking(true);
       }
     }
 
-    // ====== ボール更新（マルチボール） ======
+    // ====== ボール更新 ======
     function updateBalls() {
-      const now = performance.now();
       updateFever();
 
-      // HUD更新
       ballsEl.innerText = String(balls.length);
-      speedEl.innerText = speedScale.toFixed(2);
+      syncBallRadius();
 
-      // まず各ボール移動/反射
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        const dx = b.dx * speedScale;
-        const dy = b.dy * speedScale;
+        const dx = b.dx;
+        const dy = b.dy;
 
-        // 壁
         if (b.x + dx > canvas.width - b.r || b.x + dx < b.r) b.dx = -b.dx;
         if (b.y + dy < b.r) b.dy = -b.dy;
 
-        // パドル判定（当たったらコンボリセット）
         if (b.y + dy > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
 
-            // 角度変化
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
-            // ①コンボリセット（ここが「繋げると強い」設計）
             combo = 0;
             comboMul = 1.0;
             comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
 
           } else if (b.y > canvas.height) {
-            // このボールが落ちた → 消す
             balls.splice(i, 1);
             continue;
           }
         }
 
-        // 移動
-        b.x += b.dx * speedScale;
-        b.y += b.dy * speedScale;
+        b.x += b.dx;
+        b.y += b.dy;
 
-        // ブロック当たり
         collisionDetectionForBall(b);
       }
 
-      // ボールが全部消えたらライフ消費
-      if (balls.length === 0 && !isGameOver) {
-        loseLife();
-      }
+      if (balls.length === 0 && !isGameOver) loseLife();
     }
 
     // ====== ループ ======
@@ -673,7 +624,6 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // フィーバー中はほんのり明るいフィルタ感
       if (feverActive) {
         ctx.save();
         ctx.fillStyle = "rgba(255,0,127,0.03)";
@@ -696,14 +646,9 @@
     async function showRanking(isGameOverMode) {
       rankTitleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
       rankingBoard.style.display = 'block';
-
-      // 復活ボタン表示条件：ゲームオーバー時、まだ復活未使用
-      reviveBtn.style.display = (isGameOverMode && !reviveUsed) ? 'block' : 'none';
-
       updateNameUI();
 
       try {
-        // 公開ランキング：最大100件
         const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
         const data = await res.json();
 
@@ -721,36 +666,6 @@
       } catch (e) {
         rankList.textContent = "RANKING OFFLINE";
       }
-    }
-
-    // ====== 復活（1回だけ、スコア半減） ======
-    function revive() {
-      if (reviveUsed) return;
-      reviveUsed = true;
-
-      // スコア半減
-      score = Math.floor(score * 0.5);
-      scoreEl.innerText = score;
-
-      // ライフ1で復帰
-      lives = 1;
-      lifeEl.innerText = lives;
-
-      // 状態復帰
-      rankingBoard.style.display = 'none';
-      isGameOver = false;
-
-      // ボール/コンボ/フィーバーリセット（気持ちよく再開）
-      resetToSingleBall();
-      combo = 0;
-      comboMul = 1.0;
-      fever = 0;
-      feverActive = false;
-      feverFillEl.style.width = '0%';
-      feverTagEl.classList.remove('on');
-
-      toast('REVIVED!');
-      requestAnimationFrame(draw);
     }
 
     // ====== 送信 ======
@@ -784,7 +699,6 @@
 
     function closeRanking() {
       rankingBoard.style.display = 'none';
-      // GAME OVER表示中は再開しない（復活 or リロード）
       if (rankTitleEl.textContent === "GAME OVER") return;
 
       if (pausedByRanking) {
@@ -827,12 +741,12 @@
       lifeEl.innerText = lives;
       comboEl.innerText = 'x1.0';
       ballsEl.innerText = String(balls.length);
-      speedEl.innerText = speedScale.toFixed(2);
+      syncBallRadius();
       feverFillEl.style.width = `${fever}%`;
     }
     refreshHUD();
 
-    // ====== 管理者UI（既存） ======
+    // ====== 管理者UI（そのまま） ======
     function toggleAdminModal(force) {
       const modal = document.getElementById('admin-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -1006,6 +920,7 @@
     }
 
     // ====== スタート ======
+    syncBallRadius();
     requestAnimationFrame(draw);
   </script>
 </body>
