@@ -8,140 +8,41 @@
     :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-    .header { margin-top: 16px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:10px; width: 100%; }
-    .score-display { font-size: 22px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+    .header { margin-top: 18px; text-align: center; }
+    .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-    .hud {
-      width: min(520px, 94vw);
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 12px;
-      align-items: center;
-      font-size: 12px;
-      color: #cfd3ff;
-      opacity: 0.95;
-    }
-    .hud-item { display:flex; align-items:center; justify-content:space-between; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 8px 10px; }
-    .hud-label { opacity: 0.7; }
-    .hud-value { font-weight: 900; letter-spacing: 0.5px; }
+    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
+    canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
 
-    .fever-wrap { grid-column: 1 / span 2; display:flex; align-items:center; gap:10px; }
-    .fever-bar {
-      flex: 1;
-      height: 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      overflow: hidden;
-    }
-    .fever-fill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, rgba(0,210,255,0.9), rgba(255,0,127,0.85));
-      box-shadow: 0 0 10px rgba(255,0,127,0.25);
-      transition: width 120ms linear;
-    }
-    .fever-tag {
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,0,127,0.55);
-      color: rgba(255,0,127,0.95);
-      background: rgba(255,0,127,0.12);
-      white-space: nowrap;
-      display:none;
-    }
-    .fever-tag.on { display:inline-flex; }
+    .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
+    .touch-area { width: 90%; height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
-    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; padding: 0 8px; box-sizing: border-box; }
-
-    /* ★ 画面いっぱいに広げる */
-    canvas {
-      width: 100%;
-      height: auto;
-      background: #000;
-      border: 3px solid var(--neon-blue);
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
-      border-radius: 8px;
-      display:block;
-    }
-
-    #ranking-board {
-      display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 22px;
-      border-radius: 20px; width: 300px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
-    }
-    #rank-list{ max-height: 240px; overflow: auto; padding-right: 6px; }
-    .rank-item { display: flex; justify-content: space-between; font-size: 15px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
-    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
-
+    /* 共通ボタン */
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    #open-ranking-btn { max-width: 360px; width: min(360px, 92vw); }
+    /* 画面（モーダル） */
+    .panel {
+      display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(5, 5, 20, 0.95); border: 2px solid rgba(255,255,255,0.12);
+      padding: 22px; border-radius: 18px; width: 290px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+    }
+    .panel h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 1px; }
+    .sub { font-size: 12px; color: rgba(255,255,255,0.65); margin: 6px 0 14px; }
 
-    .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
-    .touch-area { width: 96%; height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+    /* START画面 */
+    #start-panel { display: block; border-color: rgba(0,210,255,0.35); }
 
-    #admin-gear{
-      position: fixed; top: 14px; right: 14px;
-      width: 44px; height: 44px; border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: #fff; font-size: 18px; cursor: pointer;
-      z-index: 2000; backdrop-filter: blur(10px);
-    }
-
-    .admin-modal-backdrop{
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 2500;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .admin-modal{
-      width: min(440px, 92vw);
-      background: rgba(5,5,20,0.95);
-      border: 2px solid rgba(255,0,127,0.7);
-      border-radius: 18px;
-      padding: 16px;
-      backdrop-filter: blur(10px);
-    }
-    .admin-modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
-    .admin-title{ font-size: 18px; color: #ff007f; }
-    .admin-close{ border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer; }
-    .admin-section{ margin-top: 12px; }
-    .admin-label{ font-size: 12px; color: #aaa; margin-bottom: 6px; }
-    .admin-input{
-      width: 100%; padding: 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: #111; color: #fff; outline: none;
-    }
-    .admin-row{ display:flex; gap: 8px; margin-top: 10px; }
-    .admin-btn{
-      flex: 1; padding: 10px; border-radius: 999px;
-      border: 2px solid #0f0; background: transparent; color: #0f0;
-      font-weight: bold; cursor: pointer;
-    }
-    .admin-btn:hover{ background: #0f0; color: #000; }
-    .admin-btn.danger{ border-color: #ff007f; color: #ff007f; }
-    .admin-btn.danger:hover{ background: #ff007f; color: #000; }
-    .admin-msg{ margin-top: 8px; font-size: 12px; color: #bbb; min-height: 1em; }
-    .admin-hint{ margin-top: 8px; font-size: 12px; color: #777; }
+    /* ランキング画面 */
+    #ranking-panel { border-color: rgba(255,0,127,0.55); }
+    #rank-list{ max-height: 220px; overflow: auto; padding-right: 6px; text-align:left; }
+    .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; }
+    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
 
     .toast {
-      position:absolute;
-      bottom: 12px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.75);
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      color:#fff;
-      z-index: 1200;
-      display:none;
+      position:absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
     }
   </style>
 </head>
@@ -149,33 +50,29 @@
 
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
-
-    <div class="hud">
-      <div class="hud-item"><span class="hud-label">LIFE</span><span class="hud-value" id="life">2</span></div>
-      <div class="hud-item"><span class="hud-label">COMBO</span><span class="hud-value" id="combo">x1.0</span></div>
-      <div class="hud-item"><span class="hud-label">MULTI</span><span class="hud-value" id="balls">1</span></div>
-      <div class="hud-item"><span class="hud-label">BALL</span><span class="hud-value" id="ballsize">20</span></div>
-
-      <div class="fever-wrap">
-        <span class="hud-label">FEVER</span>
-        <div class="fever-bar"><div class="fever-fill" id="fever-fill"></div></div>
-        <span class="fever-tag" id="fever-tag">FEVER x2</span>
-      </div>
-    </div>
-
-    <button class="menu-btn" id="open-ranking-btn">RANKING</button>
   </div>
 
   <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
+    <!-- canvasは元に戻す -->
+    <canvas id="gameCanvas" width="300" height="400"></canvas>
 
-    <div id="ranking-board">
-      <h2 style="color:var(--neon-pink); margin-top: 0;" id="rank-title">GAME OVER</h2>
+    <!-- START画面 -->
+    <div id="start-panel" class="panel">
+      <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
+      <div class="sub">Tap START to play<br>Combo / Fever / Powerups</div>
+      <button class="menu-btn" id="start-btn">START</button>
+      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → smaller</div>
+    </div>
+
+    <!-- GAME OVER + Ranking -->
+    <div id="ranking-panel" class="panel">
+      <h2 style="color:var(--neon-pink);">GAME OVER</h2>
+      <div class="sub">Your score: <span id="final-score">0</span></div>
+
       <div id="rank-list"></div>
+
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-      <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
-      <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
-      <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
+      <button class="menu-btn" id="submit-btn">SUBMIT & REPLAY</button>
     </div>
 
     <div class="toast" id="toast"></div>
@@ -185,56 +82,6 @@
     <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
   </div>
 
-  <!-- 右上：歯車 -->
-  <button id="admin-gear" aria-label="admin" onclick="toggleAdminModal()">⚙</button>
-
-  <!-- 管理者モーダル -->
-  <div id="admin-modal" class="admin-modal-backdrop" style="display:none;">
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <div class="admin-title">ADMIN</div>
-        <button class="admin-close" onclick="toggleAdminModal(false)">✕</button>
-      </div>
-
-      <div class="admin-section">
-        <div class="admin-label">ADMIN TOKEN（ログイン時にサーバーで検証）</div>
-        <input type="password" id="admin-token" class="admin-input" placeholder="ADMIN TOKEN" />
-        <div class="admin-row">
-          <button class="admin-btn" onclick="adminLogin()">LOGIN</button>
-          <button class="admin-btn" onclick="adminLogout()">LOGOUT</button>
-        </div>
-        <div id="admin-msg" class="admin-msg"></div>
-      </div>
-
-      <div id="admin-actions" class="admin-section" style="display:none;">
-        <div class="admin-row">
-          <button class="admin-btn danger" onclick="adminClearAll()">全削除</button>
-          <button class="admin-btn" onclick="openAdminScores()">管理者ランキング</button>
-        </div>
-        <div class="admin-hint">※「管理者ランキング」で各行の🗑を押すとその行だけ削除</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 管理者ランキング（行ごと削除） -->
-  <div id="admin-scores-modal" class="admin-modal-backdrop" style="display:none;">
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <div class="admin-title">ADMIN RANKING</div>
-        <button class="admin-close" onclick="toggleAdminScores(false)">✕</button>
-      </div>
-
-      <div style="display:flex; gap:8px; margin-bottom:10px;">
-        <button class="admin-btn" style="flex:1;" onclick="loadAdminScores()">更新</button>
-        <button class="admin-btn danger" style="flex:1;" onclick="adminClearAll()">全削除</button>
-      </div>
-
-      <div id="admin-scores-msg" class="admin-msg"></div>
-      <div id="admin-scores-list" style="max-height: 55vh; overflow:auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px;"></div>
-      <div class="admin-hint" style="margin-top:10px;">※ 各行の🗑でそのデータだけ削除（MongoDBの_idで削除）</div>
-    </div>
-  </div>
-
   <script>
     const SERVER_URL = 'https://block-r057.onrender.com';
 
@@ -242,14 +89,17 @@
     const ctx = canvas.getContext('2d');
 
     const scoreEl = document.getElementById('score');
-    const lifeEl = document.getElementById('life');
-    const comboEl = document.getElementById('combo');
-    const ballsEl = document.getElementById('balls');
-    const ballSizeEl = document.getElementById('ballsize');
-    const feverFillEl = document.getElementById('fever-fill');
-    const feverTagEl = document.getElementById('fever-tag');
-
     const toastEl = document.getElementById('toast');
+
+    const startPanel = document.getElementById('start-panel');
+    const startBtn = document.getElementById('start-btn');
+
+    const rankingPanel = document.getElementById('ranking-panel');
+    const finalScoreEl = document.getElementById('final-score');
+    const rankList = document.getElementById('rank-list');
+    const nameInput = document.getElementById('name-input');
+    const submitBtn = document.getElementById('submit-btn');
+
     function toast(msg) {
       toastEl.textContent = msg;
       toastEl.style.display = 'block';
@@ -257,15 +107,14 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
     }
 
-    const rankingBoard = document.getElementById('ranking-board');
-    const rankList = document.getElementById('rank-list');
-    const nameInput = document.getElementById('name-input');
-    const openRankingBtn = document.getElementById('open-ranking-btn');
-    const rankTitleEl = document.getElementById('rank-title');
+    // ===== ゲーム設定 =====
+    let running = false;
+    let isGameOver = false;
 
     // LIFE=2
     let lives = 2;
 
+    // score/Combo/Fever（表示はスコアだけ、内部は動く）
     let score = 0;
     let combo = 0;
     let comboMul = 1.0;
@@ -276,47 +125,11 @@
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
-    let isGameOver = false;
-    let pausedByRanking = false;
+    // Paddle
+    const paddleBaseW = 60;
+    const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // ==== 画面いっぱいCanvasにする（内部解像度も合わせる） ====
-    function resizeCanvas() {
-      const container = document.getElementById('game-container');
-      const padding = 16; // container左右paddingぶん
-      const cssW = Math.max(280, Math.floor(container.clientWidth)); // 横いっぱい
-      // 高さは縦方向に余裕を持たせて「見やすい比率」にする
-      // スマホ縦で長すぎるの防止で、viewport高さからざっくり計算
-      const maxH = Math.floor(window.innerHeight * 0.55);
-      const cssH = Math.max(380, Math.min(520, maxH));
-
-      // devicePixelRatio対応
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.style.width = cssW + 'px';
-      canvas.style.height = cssH + 'px';
-      canvas.width = Math.floor(cssW * dpr);
-      canvas.height = Math.floor(cssH * dpr);
-
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 描画座標をCSSピクセルに合わせる
-    }
-
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      // リサイズでパドル/ボールが場外に出ないよう補正
-      paddle.y = canvas.height / (window.devicePixelRatio || 1) - 30;
-      clampPaddle();
-    });
-
-    // パドル
-    const paddleBaseW = 70;
-    const paddle = { x: 0, y: 0, w: paddleBaseW, h: 10, color: '#00d2ff' };
-
-    function clampPaddle() {
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > w - paddle.w) paddle.x = w - paddle.w;
-    }
-
-    // ボール
+    // Ball size: 20 -> smaller by score
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
     const BALL_R_MIN = 4;
@@ -336,24 +149,21 @@
     function syncBallRadius() {
       const r = calcBallRadius();
       balls.forEach(b => b.r = r);
-      ballSizeEl.innerText = String(r);
     }
 
     function resetToSingleBall() {
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
-      balls = [ makeBall(w/2, h*0.55, baseBallSpeed, -baseBallSpeed) ];
+      balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
       syncBallRadius();
     }
 
-    // ブロック（8×6）※幅に合わせて自動で詰める
+    // Blocks（8×6）
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
-    const blockPadding = 5;
-    const blockOffsetTop = 56;
-    const blockMarginX = 10;
-    let blockWidth = 38; // 後で計算で上書き
+    const blockPadding = 4;
+    const blockOffsetTop = 44;
+    const blockOffsetLeft = 10;
+    const blockWidth = Math.floor((canvas.width - blockOffsetLeft*2 - blockPadding*(blockColumnCount-1)) / blockColumnCount);
 
     let blocks = [];
     function initBlocks() {
@@ -365,14 +175,16 @@
     }
     initBlocks();
 
-    function recalcBlockWidth() {
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const usable = w - blockMarginX * 2;
-      blockWidth = Math.floor((usable - (blockColumnCount - 1) * blockPadding) / blockColumnCount);
-      blockWidth = Math.max(24, blockWidth);
+    function resetBlocks() {
+      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
     }
 
-    // パワーアップ（WIDE / MULTI / PIERCE）
+    function isAllCleared() {
+      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
+      return true;
+    }
+
+    // Powerups: WIDE / MULTI / PIERCE
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -405,14 +217,14 @@
 
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
-        paddle.w = Math.min(paddleBaseW * 1.8, 140);
+        paddle.w = Math.min(paddleBaseW * 1.8, 110);
         toast('POWER: WIDE');
         wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); }, WIDE_MS);
       }
 
       if (type === PowerType.MULTI) {
         toast('POWER: MULTI');
-        const b = balls[0] || makeBall(100, 100, baseBallSpeed, -baseBallSpeed);
+        const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
         balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
         syncBallRadius();
@@ -424,20 +236,7 @@
       }
     }
 
-    function updateNameUI() {
-      const saved = localStorage.getItem('playerName');
-      const hasName = !!(saved && saved.trim());
-      if (hasName) {
-        nameInput.value = saved;
-        nameInput.style.display = 'none';
-        nameInput.disabled = true;
-      } else {
-        nameInput.style.display = 'block';
-        nameInput.disabled = false;
-      }
-    }
-    updateNameUI();
-
+    // ===== ルール（スコア/フィーバー）=====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -445,7 +244,6 @@
 
       score += add;
       scoreEl.innerText = score;
-      comboEl.innerText = `x${(comboMul * feverMul).toFixed(1)}`;
 
       syncBallRadius();
     }
@@ -453,70 +251,45 @@
     function addFever(amount) {
       if (feverActive) return;
       fever = Math.min(100, fever + amount);
-      feverFillEl.style.width = `${fever}%`;
       if (fever >= 100) startFever();
     }
 
     function startFever() {
       feverActive = true;
       fever = 0;
-      feverFillEl.style.width = '0%';
-      feverTagEl.classList.add('on');
       feverEndAt = performance.now() + FEVER_DURATION_MS;
-      toast('FEVER!');
+      toast('FEVER x2!');
     }
 
     function updateFever() {
       if (!feverActive) return;
       if (performance.now() >= feverEndAt) {
         feverActive = false;
-        feverTagEl.classList.remove('on');
         toast('FEVER END');
       }
     }
 
-    function isAllCleared() {
-      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
-      return true;
+    // ===== 描画 =====
+    function drawPaddle() {
+      ctx.fillStyle = paddle.color;
+      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
     }
 
-    function resetBlocks() {
-      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
-    }
-
-    function collisionDetectionForBall(b) {
+    function drawBall(b) {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
       const pierceOn = performance.now() < b.pierceUntil;
-
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) {
-          const blk = blocks[c][r];
-          if(blk.status === 1) {
-            if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-              blk.status = 0;
-              if (!pierceOn) b.dy = -b.dy;
-
-              combo += 1;
-              addFever(7);
-              addScore(10);
-
-              maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
-
-              if (isAllCleared()) {
-                resetBlocks();
-                toast('NEXT WAVE!');
-              }
-            }
-          }
-        }
-      }
+      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
+      ctx.fill();
+      ctx.closePath();
     }
 
     function drawBlocks() {
       for(let c=0; c<blockColumnCount; c++) {
         for(let r=0; r<blockRowCount; r++) {
           if(blocks[c][r].status === 1) {
-            const bx = blockMarginX + c * (blockWidth + blockPadding);
-            const by = blockOffsetTop + r * (blockHeight + blockPadding);
+            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
+            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
             blocks[c][r].x = bx;
             blocks[c][r].y = by;
             ctx.fillStyle = `hsl(${r * 35}, 70%, 50%)`;
@@ -544,18 +317,32 @@
       });
     }
 
-    function drawBall(b) {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+    // ===== 衝突 =====
+    function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
-      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
-      ctx.fill();
-      ctx.closePath();
-    }
 
-    function drawPaddle() {
-      ctx.fillStyle = paddle.color;
-      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) {
+          const blk = blocks[c][r];
+          if(blk.status === 1) {
+            if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
+              blk.status = 0;
+              if (!pierceOn) b.dy = -b.dy;
+
+              combo += 1;
+              addFever(7);
+              addScore(10);
+
+              maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
+
+              if (isAllCleared()) {
+                resetBlocks();
+                toast('NEXT WAVE!');
+              }
+            }
+          }
+        }
+      }
     }
 
     function updatePowerups() {
@@ -570,42 +357,38 @@
           powerups.splice(i, 1);
           continue;
         }
-        if (p.y > (canvas.height/(window.devicePixelRatio||1)) + 20) powerups.splice(i, 1);
+        if (p.y > canvas.height + 20) powerups.splice(i, 1);
       }
+    }
+
+    function clampPaddle() {
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     }
 
     function loseLife() {
       lives -= 1;
-      lifeEl.innerText = lives;
-
       resetToSingleBall();
-      paddle.x = (canvas.width/(window.devicePixelRatio||1) - paddle.w) / 2;
+      paddle.x = (canvas.width - paddle.w) / 2;
+      clampPaddle();
 
       combo = 0;
       comboMul = 1.0;
-      comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
 
       toast(`MISS! LIFE ${lives}`);
 
       if (lives <= 0) {
-        isGameOver = true;
-        showRanking(true);
+        endGame();
       }
     }
 
     function updateBalls() {
       updateFever();
 
-      ballsEl.innerText = String(balls.length);
-      syncBallRadius();
-
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
-
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        if (b.x + b.dx > w - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
+        if (b.x + b.dx > canvas.width - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
         if (b.y + b.dy < b.r) b.dy = -b.dy;
 
         if (b.y + b.dy > paddle.y - b.r) {
@@ -614,10 +397,10 @@
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
+            // パドルに当たったらコンボリセット
             combo = 0;
             comboMul = 1.0;
-            comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
-          } else if (b.y > h) {
+          } else if (b.y > canvas.height) {
             balls.splice(i, 1);
             continue;
           }
@@ -632,18 +415,16 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
-    function draw() {
+    function loop() {
+      if (!running) return;
       if (isGameOver) return;
 
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      const h = canvas.height / (window.devicePixelRatio || 1);
-
-      ctx.clearRect(0, 0, w, h);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (feverActive) {
         ctx.save();
         ctx.fillStyle = "rgba(255,0,127,0.03)";
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
       }
 
@@ -655,18 +436,52 @@
       updatePowerups();
       updateBalls();
 
-      requestAnimationFrame(draw);
+      requestAnimationFrame(loop);
     }
 
-    async function showRanking(isGameOverMode) {
-      rankTitleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
-      rankingBoard.style.display = 'block';
-      updateNameUI();
+    // ===== 画面遷移 =====
+    function startGame() {
+      // 初期化
+      score = 0;
+      lives = 2;
+      combo = 0;
+      comboMul = 1.0;
+      fever = 0;
+      feverActive = false;
+      powerups.length = 0;
+      initBlocks();
 
+      paddle.w = paddleBaseW;
+      paddle.x = (canvas.width - paddle.w)/2;
+
+      resetToSingleBall();
+
+      scoreEl.innerText = '0';
+
+      // 画面
+      startPanel.style.display = 'none';
+      rankingPanel.style.display = 'none';
+
+      isGameOver = false;
+      running = true;
+      requestAnimationFrame(loop);
+    }
+
+    async function endGame() {
+      running = false;
+      isGameOver = true;
+
+      finalScoreEl.innerText = String(score);
+      rankingPanel.style.display = 'block';
+
+      // 前回名前復元
+      const savedName = localStorage.getItem('playerName');
+      if (savedName) nameInput.value = savedName;
+
+      // ランキング取得
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
         const data = await res.json();
-
         rankList.innerHTML = '';
         data.forEach((s, i) => {
           const row = document.createElement('div');
@@ -679,19 +494,14 @@
           rankList.appendChild(row);
         });
       } catch (e) {
-        rankList.textContent = "RANKING OFFLINE";
+        rankList.textContent = 'RANKING OFFLINE';
       }
     }
 
+    // ===== 送信 =====
     async function submitScore() {
-      let saved = localStorage.getItem('playerName');
-      let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
-      name = name.slice(0, 10) || "PLAYER";
-
-      if (!saved || !saved.trim()) {
-        localStorage.setItem('playerName', name);
-        updateNameUI();
-      }
+      const name = (nameInput.value || 'PLAYER').trim().slice(0, 10) || 'PLAYER';
+      localStorage.setItem('playerName', name);
 
       try {
         await fetch(`${SERVER_URL}/api/save-score`, {
@@ -701,249 +511,35 @@
         });
       } catch (e) {}
 
-      location.reload();
+      // リプレイ
+      startPanel.style.display = 'block';
+      rankingPanel.style.display = 'none';
     }
 
-    openRankingBtn.addEventListener('click', () => {
-      pausedByRanking = true;
-      isGameOver = true;
-      showRanking(false);
-    });
-
-    function closeRanking() {
-      rankingBoard.style.display = 'none';
-      if (rankTitleEl.textContent === "GAME OVER") return;
-
-      if (pausedByRanking) {
-        pausedByRanking = false;
-        isGameOver = false;
-        requestAnimationFrame(draw);
-      }
-    }
-
-    function changeName() {
-      localStorage.removeItem('playerName');
-      nameInput.value = '';
-      nameInput.style.display = 'block';
-      nameInput.disabled = false;
-      nameInput.focus();
-    }
-
-    // 操作
+    // ===== 操作 =====
     const touchArea = document.getElementById('touch-control');
-    function movePaddleByClientX(clientX) {
-      const rect = touchArea.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const ratio = x / rect.width;
-      const w = canvas.width / (window.devicePixelRatio || 1);
-      paddle.x = ratio * w - paddle.w/2;
-      clampPaddle();
-    }
-
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
-      movePaddleByClientX(e.touches[0].clientX);
+      const rect = touchArea.getBoundingClientRect();
+      const touchX = e.touches[0].clientX - rect.left;
+      paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
+      clampPaddle();
     }, { passive: false });
 
     touchArea.addEventListener('mousemove', (e) => {
-      movePaddleByClientX(e.clientX);
+      const rect = touchArea.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
+      clampPaddle();
     });
 
-    // HUD初期
-    function refreshHUD() {
-      scoreEl.innerText = score;
-      lifeEl.innerText = lives;
-      comboEl.innerText = 'x1.0';
-      ballsEl.innerText = String(balls.length);
-      syncBallRadius();
-      feverFillEl.style.width = `${fever}%`;
-    }
+    // ===== イベント =====
+    startBtn.addEventListener('click', startGame);
+    submitBtn.addEventListener('click', submitScore);
 
-    // ===== 管理者UI（そのまま・省略） =====
-    function toggleAdminModal(force) {
-      const modal = document.getElementById('admin-modal');
-      const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
-      modal.style.display = show ? 'flex' : 'none';
-      if (show) {
-        adminSetMsg('');
-        setTimeout(() => document.getElementById('admin-token')?.focus(), 0);
-      }
-    }
-    document.addEventListener('click', (e) => {
-      const modal = document.getElementById('admin-modal');
-      if (modal && modal.style.display !== 'none' && e.target === modal) toggleAdminModal(false);
-
-      const modal2 = document.getElementById('admin-scores-modal');
-      if (modal2 && modal2.style.display !== 'none' && e.target === modal2) toggleAdminScores(false);
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        toggleAdminModal(false);
-        toggleAdminScores(false);
-      }
-    });
-
-    let ADMIN_SESSION_TOKEN = null;
-
-    function adminSetMsg(msg) {
-      const el = document.getElementById('admin-msg');
-      if (el) el.textContent = msg || '';
-    }
-
-    async function adminLogin() {
-      const token = (document.getElementById('admin-token').value || '').trim();
-      if (!token) { adminSetMsg('トークンを入力してね'); return; }
-
-      adminSetMsg('確認中...');
-      try {
-        const res = await fetch(`${SERVER_URL}/api/admin/check`, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const text = await res.text().catch(() => '');
-        if (!res.ok) {
-          adminSetMsg(`ログイン失敗: ${res.status} ${text}`);
-          return;
-        }
-        ADMIN_SESSION_TOKEN = token;
-        document.getElementById('admin-actions').style.display = 'block';
-        adminSetMsg('ログインOK');
-      } catch (e) {
-        adminSetMsg('通信エラー');
-      }
-    }
-
-    function adminLogout() {
-      ADMIN_SESSION_TOKEN = null;
-      document.getElementById('admin-actions').style.display = 'none';
-      document.getElementById('admin-token').value = '';
-      adminSetMsg('ログアウトしました');
-    }
-
-    async function adminFetch(path, options = {}) {
-      if (!ADMIN_SESSION_TOKEN) {
-        adminSetMsg('先にLOGINしてね');
-        throw new Error('no admin token');
-      }
-      const headers = {
-        ...(options.headers || {}),
-        'Authorization': `Bearer ${ADMIN_SESSION_TOKEN}`,
-      };
-      const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers });
-      const text = await res.text().catch(() => '');
-      if (!res.ok) {
-        adminSetMsg(`失敗: ${res.status} ${text}`);
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      try { return JSON.parse(text); } catch { return text; }
-    }
-
-    async function adminClearAll() {
-      const ok = confirm('本当に全データ削除しますか？（戻せません）');
-      if (!ok) return;
-
-      adminSetMsg('削除中...');
-      try {
-        const r = await adminFetch('/api/admin/scores?confirm=YES', { method: 'DELETE' });
-        adminSetMsg(`全削除OK: deletedCount=${r.deletedCount ?? ''}`);
-        await loadAdminScores().catch(()=>{});
-        showRanking(false);
-      } catch (e) {}
-    }
-
-    function toggleAdminScores(force) {
-      const modal = document.getElementById('admin-scores-modal');
-      const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
-      modal.style.display = show ? 'flex' : 'none';
-    }
-
-    function openAdminScores() {
-      if (!ADMIN_SESSION_TOKEN) {
-        adminSetMsg('先にLOGINしてね');
-        return;
-      }
-      toggleAdminScores(true);
-      loadAdminScores();
-    }
-
-    async function loadAdminScores() {
-      const msg = document.getElementById('admin-scores-msg');
-      const listEl = document.getElementById('admin-scores-list');
-      msg.textContent = '読み込み中...';
-      listEl.innerHTML = '';
-
-      try {
-        const data = await adminFetch('/api/admin/scores', { method: 'GET' });
-
-        msg.textContent = `件数: ${data.length}`;
-        if (!data.length) {
-          listEl.innerHTML = '<div class="admin-msg">データがありません</div>';
-          return;
-        }
-
-        data.forEach((s, i) => {
-          const row = document.createElement('div');
-          row.style.display = 'grid';
-          row.style.gridTemplateColumns = '1fr auto auto';
-          row.style.gap = '10px';
-          row.style.alignItems = 'center';
-          row.style.padding = '8px 6px';
-          row.style.borderBottom = '1px solid rgba(255,255,255,0.08)';
-
-          const left = document.createElement('div');
-          left.style.fontSize = '14px';
-          left.textContent = `${i + 1}. ${s.name}`;
-
-          const mid = document.createElement('div');
-          mid.style.fontSize = '14px';
-          mid.style.opacity = '0.9';
-          mid.textContent = String(s.score);
-
-          const del = document.createElement('button');
-          del.textContent = '🗑';
-          del.title = 'この行を削除';
-          del.style.border = '1px solid rgba(255,255,255,0.2)';
-          del.style.background = 'rgba(255,255,255,0.06)';
-          del.style.color = '#fff';
-          del.style.borderRadius = '10px';
-          del.style.cursor = 'pointer';
-          del.style.padding = '6px 10px';
-
-          del.onclick = async () => {
-            const ok = confirm(`"${s.name}"（score:${s.score}）を削除しますか？`);
-            if (!ok) return;
-
-            msg.textContent = '削除中...';
-            try {
-              await adminFetch(`/api/admin/score/${encodeURIComponent(s._id)}`, { method: 'DELETE' });
-              await loadAdminScores();
-              showRanking(false);
-            } catch (e) {}
-          };
-
-          row.appendChild(left);
-          row.appendChild(mid);
-          row.appendChild(del);
-          listEl.appendChild(row);
-        });
-
-      } catch (e) {
-        msg.textContent = '読み込み失敗';
-      }
-    }
-
-    // ==== 初期化して開始 ====
-    resizeCanvas();
-    recalcBlockWidth();
-
-    const w = canvas.width / (window.devicePixelRatio || 1);
-    const h = canvas.height / (window.devicePixelRatio || 1);
-    paddle.x = (w - paddle.w) / 2;
-    paddle.y = h - 30;
-
-    resetToSingleBall();
-    refreshHUD();
-    requestAnimationFrame(draw);
+    // 初期：STARTだけ見せる
+    startPanel.style.display = 'block';
+    rankingPanel.style.display = 'none';
   </script>
 </body>
 </html>
