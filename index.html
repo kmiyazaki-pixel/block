@@ -1,483 +1,145 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>BREAKOUT RANKING BATTLE</title>
-  <style>
-    :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
-    body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+// index.js（Render向け：ランキング + 管理者パネル + 行ごと削除）
+require('dotenv').config();
 
-    .header { margin-top: 20px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:12px; }
-    .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dns = require('dns');
 
-    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
-    canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
+dns.setDefaultResultOrder('ipv4first');
 
-    #ranking-board {
-      display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 25px;
-      border-radius: 20px; width: 280px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// GitHub Pages からのアクセスを許可（あなたのPagesドメイン）
+app.use(cors({
+  origin: ['https://kmiyazaki-pixel.github.io'],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
+
+app.use(express.json());
+
+// --- 動作確認 ---
+app.get('/', (req, res) => res.send('OK: API is running'));
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+// --- 管理者認証（Bearerトークン）---
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  const expected = (process.env.ADMIN_TOKEN || '').trim();
+
+  if (!expected) return res.status(500).json({ error: 'server not configured' });
+  if (token !== expected) return res.status(401).json({ error: 'unauthorized' });
+
+  next();
+}
+
+// 管理者ログイン検証（フロントはここでOKならログイン成功扱い）
+app.get('/api/admin/check', requireAdmin, (req, res) => {
+  res.json({ ok: true });
+});
+
+// --- MongoDB接続 ---
+const MONGO_URL = process.env.MONGO_URL;
+if (!MONGO_URL) console.error('❌ MONGO_URL is missing');
+
+mongoose.connect(MONGO_URL, { serverSelectionTimeoutMS: 15000, family: 4 })
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// --- Schema ---
+const scoreSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  score: { type: Number, required: true },
+  date: { type: Date, default: Date.now }
+});
+const Score = mongoose.model('Score', scoreSchema);
+
+// --- API: ranking（通常：TOP5） ---
+app.get('/api/ranking', async (req, res) => {
+  try {
+    const topScores = await Score.find()
+      .sort({ score: -1, date: 1 })
+      .limit(5);
+    res.json(topScores);
+  } catch (err) {
+    console.error('❌ /api/ranking error:', err);
+    res.status(500).json({ error: '取得失敗' });
+  }
+});
+
+// --- API: save score（同名は自己ベストだけ残す） ---
+app.post('/api/save-score', async (req, res) => {
+  try {
+    let { name, score } = req.body;
+
+    if (typeof name !== 'string') name = 'PLAYER';
+    if (!Number.isFinite(score)) score = 0;
+
+    name = name.trim().slice(0, 10) || 'PLAYER';
+    score = Math.max(0, Math.floor(score));
+
+    await Score.findOneAndUpdate(
+      { name },
+      { $max: { score }, $set: { date: new Date() } },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ /api/save-score error:', err);
+    res.status(500).json({ error: '保存失敗' });
+  }
+});
+
+// ===== 管理者用 =====
+
+// 管理者：一覧（最大100件）
+app.get('/api/admin/scores', requireAdmin, async (req, res) => {
+  try {
+    const list = await Score.find()
+      .sort({ score: -1, date: 1 })
+      .limit(100);
+    res.json(list);
+  } catch (err) {
+    console.error('❌ admin list error:', err);
+    res.status(500).json({ error: 'list failed' });
+  }
+});
+
+// 管理者：全削除（確認付き）
+app.delete('/api/admin/scores', requireAdmin, async (req, res) => {
+  try {
+    if (req.query.confirm !== 'YES') {
+      return res.status(400).json({ error: 'add ?confirm=YES' });
     }
-    .rank-item { display: flex; justify-content: space-between; font-size: 16px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
-    #name-input { width: 90%; padding: 12px; margin: 15px 0; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
+    const result = await Score.deleteMany({});
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error('❌ delete all error:', err);
+    res.status(500).json({ error: 'delete failed' });
+  }
+});
 
-    .menu-btn { width: 100%; padding: 15px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    .menu-btn:hover { background: var(--neon-green); color: #000; }
+// 管理者：1件削除（MongoDB _id で削除）
+app.delete('/api/admin/score/:id', requireAdmin, async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
 
-    #open-ranking-btn { max-width: 300px; width: 300px; }
-
-    .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
-    .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
-
-    /* 右上の歯車ボタン */
-    #admin-gear{
-      position: fixed; top: 14px; right: 14px;
-      width: 44px; height: 44px; border-radius: 14px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-      color: #fff; font-size: 18px; cursor: pointer;
-      z-index: 2000; backdrop-filter: blur(10px);
-    }
-    #admin-gear:hover{
-      border-color: rgba(0,210,255,0.6);
-      box-shadow: 0 0 10px rgba(0,210,255,0.25);
-    }
-
-    /* 管理者モーダル */
-    .admin-modal-backdrop{
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 2500;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .admin-modal{
-      width: min(420px, 92vw);
-      background: rgba(5,5,20,0.95);
-      border: 2px solid rgba(255,0,127,0.7);
-      border-radius: 18px;
-      padding: 16px;
-      backdrop-filter: blur(10px);
-    }
-    .admin-modal-header{
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom: 10px;
-    }
-    .admin-title{ font-size: 18px; color: #ff007f; }
-    .admin-close{ border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer; }
-    .admin-section{ margin-top: 12px; }
-    .admin-label{ font-size: 12px; color: #aaa; margin-bottom: 6px; }
-    .admin-input{
-      width: 100%; padding: 10px;
-      border-radius: 12px;
-      border: 1px solid rgba(255,255,255,0.15);
-      background: #111; color: #fff; outline: none;
-    }
-    .admin-row{ display:flex; gap: 8px; margin-top: 10px; }
-    .admin-btn{
-      flex: 1; padding: 10px; border-radius: 999px;
-      border: 2px solid #0f0; background: transparent; color: #0f0;
-      font-weight: bold; cursor: pointer;
-    }
-    .admin-btn:hover{ background: #0f0; color: #000; }
-    .admin-btn.danger{ border-color: #ff007f; color: #ff007f; }
-    .admin-btn.danger:hover{ background: #ff007f; color: #000; }
-    .admin-msg{ margin-top: 8px; font-size: 12px; color: #bbb; min-height: 1em; }
-    .admin-hint{ margin-top: 8px; font-size: 12px; color: #777; }
-  </style>
-</head>
-<body>
-
-  <div class="header">
-    <div class="score-display">SCORE: <span id="score">0</span></div>
-    <button class="menu-btn" id="open-ranking-btn">RANKING</button>
-  </div>
-
-  <div id="game-container">
-    <canvas id="gameCanvas" width="300" height="400"></canvas>
-
-    <div id="ranking-board">
-      <h2 style="color:var(--neon-pink); margin-top: 0;">GAME OVER</h2>
-      <div id="rank-list"></div>
-      <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-
-      <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
-      <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
-      <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
-    </div>
-  </div>
-
-  <div class="controls">
-    <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
-  </div>
-
-  <!-- 右上：管理者ボタン（歯車） -->
-  <button id="admin-gear" aria-label="admin" onclick="toggleAdminModal()">⚙</button>
-
-  <!-- 管理者モーダル -->
-  <div id="admin-modal" class="admin-modal-backdrop" style="display:none;">
-    <div class="admin-modal">
-      <div class="admin-modal-header">
-        <div class="admin-title">ADMIN</div>
-        <button class="admin-close" onclick="toggleAdminModal(false)">✕</button>
-      </div>
-
-      <div class="admin-section">
-        <div class="admin-label">ADMIN TOKEN（ログイン時にサーバーで検証）</div>
-        <input type="password" id="admin-token" class="admin-input" placeholder="ADMIN TOKEN" />
-        <div class="admin-row">
-          <button class="admin-btn" onclick="adminLogin()">LOGIN</button>
-          <button class="admin-btn" onclick="adminLogout()">LOGOUT</button>
-        </div>
-        <div id="admin-msg" class="admin-msg"></div>
-      </div>
-
-      <div id="admin-actions" class="admin-section" style="display:none;">
-        <button class="admin-btn danger" onclick="adminClearAll()">🗑 全データ削除</button>
-        <button class="admin-btn" onclick="adminClearName()">🧹 この名前を削除</button>
-        <div class="admin-hint">※「この名前」は端末に保存された名前（playerName）</div>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-
-    // RenderのURL
-    const SERVER_URL = 'https://block-r057.onrender.com';
-
-    const rankingBoard = document.getElementById('ranking-board');
-    const rankList = document.getElementById('rank-list');
-    const nameInput = document.getElementById('name-input');
-    const openRankingBtn = document.getElementById('open-ranking-btn');
-
-    let score = 0;
-    let isGameOver = false;
-    let pausedByRanking = false;
-
-    function updateNameUI() {
-      const saved = localStorage.getItem('playerName');
-      const hasName = !!(saved && saved.trim());
-      if (hasName) {
-        nameInput.value = saved;
-        nameInput.style.display = 'none';
-        nameInput.disabled = true;
-      } else {
-        nameInput.style.display = 'block';
-        nameInput.disabled = false;
-      }
-    }
-    updateNameUI();
-
-    const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
-    const ball = { x: 150, y: 200, dx: 3, dy: -3, r: 6 };
-
-    const blockRowCount = 5;
-    const blockColumnCount = 6;
-    const blockWidth = 40;
-    const blockHeight = 15;
-    const blockPadding = 5;
-    const blockOffsetTop = 40;
-    const blockOffsetLeft = 15;
-    let blocks = [];
-
-    for (let c=0; c<blockColumnCount; c++) {
-      blocks[c] = [];
-      for (let r=0; r<blockRowCount; r++) blocks[c][r] = { x: 0, y: 0, status: 1 };
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'invalid id' });
     }
 
-    function collisionDetection() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) {
-          const b = blocks[c][r];
-          if (b.status === 1) {
-            if (ball.x > b.x && ball.x < b.x + blockWidth && ball.y > b.y && ball.y < b.y + blockHeight) {
-              ball.dy = -ball.dy;
-              b.status = 0;
-              score += 10;
-              scoreEl.innerText = score;
-              if (score === blockRowCount * blockColumnCount * 10) resetBlocks();
-            }
-          }
-        }
-      }
-    }
+    const result = await Score.deleteOne({ _id: id });
+    res.json({ success: true, deletedCount: result.deletedCount });
+  } catch (err) {
+    console.error('❌ delete by id error:', err);
+    res.status(500).json({ error: 'delete failed' });
+  }
+});
 
-    function resetBlocks() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
-      }
-      ball.dy *= 1.1;
-    }
-
-    function drawBall() {
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    function drawPaddle() {
-      ctx.fillStyle = paddle.color;
-      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-    }
-
-    function drawBlocks() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) {
-          if (blocks[c][r].status === 1) {
-            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
-            blocks[c][r].x = bx;
-            blocks[c][r].y = by;
-            ctx.fillStyle = `hsl(${r * 40}, 70%, 50%)`;
-            ctx.fillRect(bx, by, blockWidth, blockHeight);
-          }
-        }
-      }
-    }
-
-    function update() {
-      if (isGameOver) return;
-
-      if (ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) ball.dx = -ball.dx;
-      if (ball.y + ball.dy < ball.r) ball.dy = -ball.dy;
-
-      if (ball.y + ball.dy > paddle.y - ball.r) {
-        if (ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
-          ball.dy = -ball.dy;
-          const hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-          ball.dx = hitPos * 4;
-        } else if (ball.y > canvas.height) {
-          pausedByRanking = false;
-          isGameOver = true;
-
-          const saved = localStorage.getItem('playerName');
-          const hasName = !!(saved && saved.trim());
-
-          if (hasName) {
-            fetch(`${SERVER_URL}/api/save-score`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: saved.trim().slice(0, 10), score })
-            }).finally(() => showRanking(true));
-          } else {
-            showRanking(true);
-          }
-        }
-      }
-
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-
-      collisionDetection();
-    }
-
-    function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBlocks();
-      drawBall();
-      drawPaddle();
-      update();
-      if (!isGameOver) requestAnimationFrame(draw);
-    }
-
-    async function showRanking(isGameOverMode) {
-      const titleEl = rankingBoard.querySelector('h2');
-      titleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
-      rankingBoard.style.display = 'block';
-      updateNameUI();
-
-      try {
-        const res = await fetch(`${SERVER_URL}/api/ranking`);
-        const data = await res.json();
-        rankList.innerHTML = '';
-        data.forEach((s, i) => {
-          const row = document.createElement('div');
-          row.className = 'rank-item';
-          const left = document.createElement('span');
-          left.textContent = `${i + 1}. ${s.name}`;
-          const right = document.createElement('span');
-          right.textContent = String(s.score);
-          row.append(left, right);
-          rankList.appendChild(row);
-        });
-      } catch (e) {
-        rankList.textContent = "RANKING OFFLINE";
-      }
-    }
-
-    async function submitScore() {
-      let saved = localStorage.getItem('playerName');
-      let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
-      name = name.slice(0, 10) || "PLAYER";
-
-      if (!saved || !saved.trim()) {
-        localStorage.setItem('playerName', name);
-        updateNameUI();
-      }
-
-      try {
-        await fetch(`${SERVER_URL}/api/save-score`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, score })
-        });
-      } catch (e) {}
-
-      location.reload();
-    }
-
-    openRankingBtn.addEventListener('click', () => {
-      pausedByRanking = true;
-      isGameOver = true;
-      showRanking(false);
-    });
-
-    function closeRanking() {
-      rankingBoard.style.display = 'none';
-      const titleEl = rankingBoard.querySelector('h2');
-      if (titleEl.textContent === "GAME OVER") return;
-
-      if (pausedByRanking) {
-        pausedByRanking = false;
-        isGameOver = false;
-        requestAnimationFrame(draw);
-      }
-    }
-
-    function changeName() {
-      localStorage.removeItem('playerName');
-      nameInput.value = '';
-      nameInput.style.display = 'block';
-      nameInput.disabled = false;
-      nameInput.focus();
-    }
-
-    const touchArea = document.getElementById('touch-control');
-    touchArea.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      const rect = touchArea.getBoundingClientRect();
-      const touchX = e.touches[0].clientX - rect.left;
-      paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
-    }, { passive: false });
-
-    touchArea.addEventListener('mousemove', (e) => {
-      const rect = touchArea.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
-    });
-
-    // ===== 管理者モーダル =====
-    function toggleAdminModal(force) {
-      const modal = document.getElementById('admin-modal');
-      const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
-      modal.style.display = show ? 'flex' : 'none';
-      if (show) {
-        adminSetMsg('');
-        setTimeout(() => document.getElementById('admin-token')?.focus(), 0);
-      }
-    }
-    document.addEventListener('click', (e) => {
-      const modal = document.getElementById('admin-modal');
-      if (!modal || modal.style.display === 'none') return;
-      if (e.target === modal) toggleAdminModal(false);
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') toggleAdminModal(false);
-    });
-
-    let ADMIN_SESSION_TOKEN = null;
-
-    function adminSetMsg(msg) {
-      const el = document.getElementById('admin-msg');
-      if (el) el.textContent = msg || '';
-    }
-
-    // ★ログイン時にサーバーで検証してからログイン扱いにする
-    async function adminLogin() {
-      const token = (document.getElementById('admin-token').value || '').trim();
-      if (!token) { adminSetMsg('トークンを入力してね'); return; }
-
-      adminSetMsg('確認中...');
-      try {
-        const res = await fetch(`${SERVER_URL}/api/admin/check`, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const text = await res.text().catch(() => '');
-        if (!res.ok) {
-          adminSetMsg(`ログイン失敗: ${res.status} ${text}`);
-          return;
-        }
-        ADMIN_SESSION_TOKEN = token;
-        document.getElementById('admin-actions').style.display = 'block';
-        adminSetMsg('ログインOK');
-      } catch (e) {
-        adminSetMsg('通信エラー');
-      }
-    }
-
-    function adminLogout() {
-      ADMIN_SESSION_TOKEN = null;
-      document.getElementById('admin-actions').style.display = 'none';
-      document.getElementById('admin-token').value = '';
-      adminSetMsg('ログアウトしました');
-    }
-
-    async function adminFetch(path, options = {}) {
-      if (!ADMIN_SESSION_TOKEN) {
-        adminSetMsg('先にLOGINしてね');
-        throw new Error('no admin token');
-      }
-      const headers = {
-        ...(options.headers || {}),
-        'Authorization': `Bearer ${ADMIN_SESSION_TOKEN}`,
-      };
-      const res = await fetch(`${SERVER_URL}${path}`, { ...options, headers });
-      const text = await res.text().catch(() => '');
-      if (!res.ok) {
-        adminSetMsg(`失敗: ${res.status} ${text}`);
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-      try { return JSON.parse(text); } catch { return text; }
-    }
-
-    async function adminClearAll() {
-      const ok = confirm('本当に全データ削除しますか？（戻せません）');
-      if (!ok) return;
-
-      adminSetMsg('削除中...');
-      try {
-        const r = await adminFetch('/api/admin/scores?confirm=YES', { method: 'DELETE' });
-        adminSetMsg(`全削除OK: deletedCount=${r.deletedCount ?? ''}`);
-        showRanking(false);
-      } catch (e) {}
-    }
-
-    async function adminClearName() {
-      const saved = (localStorage.getItem('playerName') || '').trim().slice(0, 10);
-      if (!saved) { adminSetMsg('削除する名前がありません（playerName未設定）'); return; }
-
-      const ok = confirm(`"${saved}" を削除しますか？`);
-      if (!ok) return;
-
-      adminSetMsg('削除中...');
-      try {
-        const r = await adminFetch(`/api/admin/scores/${encodeURIComponent(saved)}`, { method: 'DELETE' });
-        adminSetMsg(`削除OK: "${saved}" deletedCount=${r.deletedCount ?? ''}`);
-        showRanking(false);
-      } catch (e) {}
-    }
-
-    draw();
-  </script>
-</body>
-</html>
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
