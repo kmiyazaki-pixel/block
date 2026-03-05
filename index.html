@@ -8,34 +8,78 @@
     :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-    .header { margin-top: 20px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:12px; }
-    .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+    .header { margin-top: 16px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:10px; width: 100%; }
+    .score-display { font-size: 22px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+    .hud {
+      width: min(360px, 92vw);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      align-items: center;
+      font-size: 12px;
+      color: #cfd3ff;
+      opacity: 0.95;
+    }
+    .hud-item { display:flex; align-items:center; justify-content:space-between; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 8px 10px; }
+    .hud-label { opacity: 0.7; }
+    .hud-value { font-weight: 900; letter-spacing: 0.5px; }
+
+    .fever-wrap { grid-column: 1 / span 2; display:flex; align-items:center; gap:10px; }
+    .fever-bar {
+      flex: 1;
+      height: 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      overflow: hidden;
+    }
+    .fever-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(0,210,255,0.9), rgba(255,0,127,0.85));
+      box-shadow: 0 0 10px rgba(255,0,127,0.25);
+      transition: width 120ms linear;
+    }
+    .fever-tag {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,0,127,0.55);
+      color: rgba(255,0,127,0.95);
+      background: rgba(255,0,127,0.12);
+      white-space: nowrap;
+      display:none;
+    }
+    .fever-tag.on { display:inline-flex; }
 
     #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
     canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
 
+    /* ランキングUI */
     #ranking-board {
       display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 25px;
-      border-radius: 20px; width: 280px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+      background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 22px;
+      border-radius: 20px; width: 290px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
     }
-
-    /* ランキングが長くなるのでスクロール */
     #rank-list{
       max-height: 220px;
       overflow: auto;
       padding-right: 6px;
     }
+    .rank-item { display: flex; justify-content: space-between; font-size: 15px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
+    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
 
-    .rank-item { display: flex; justify-content: space-between; font-size: 16px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
-    #name-input { width: 90%; padding: 12px; margin: 15px 0; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
-
-    .menu-btn { width: 100%; padding: 15px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+    .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
-    #open-ranking-btn { max-width: 300px; width: 300px; }
 
-    .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
-    .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+    .menu-btn.pink { color: var(--neon-pink); border-color: var(--neon-pink); }
+    .menu-btn.pink:hover { background: var(--neon-pink); color:#000; }
+
+    #open-ranking-btn { max-width: 300px; width: min(300px, 92vw); }
+
+    .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
+    .touch-area { width: min(520px, 90%); height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
     /* 右上の歯車ボタン */
     #admin-gear{
@@ -45,10 +89,6 @@
       background: rgba(255,255,255,0.06);
       color: #fff; font-size: 18px; cursor: pointer;
       z-index: 2000; backdrop-filter: blur(10px);
-    }
-    #admin-gear:hover{
-      border-color: rgba(0,210,255,0.6);
-      box-shadow: 0 0 10px rgba(0,210,255,0.25);
     }
 
     /* 管理者モーダル */
@@ -91,12 +131,42 @@
     .admin-btn.danger:hover{ background: #ff007f; color: #000; }
     .admin-msg{ margin-top: 8px; font-size: 12px; color: #bbb; min-height: 1em; }
     .admin-hint{ margin-top: 8px; font-size: 12px; color: #777; }
+
+    /* 小さな通知 */
+    .toast {
+      position:absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color:#fff;
+      z-index: 1200;
+      display:none;
+    }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
+
+    <div class="hud">
+      <div class="hud-item"><span class="hud-label">LIFE</span><span class="hud-value" id="life">3</span></div>
+      <div class="hud-item"><span class="hud-label">COMBO</span><span class="hud-value" id="combo">x1.0</span></div>
+      <div class="hud-item"><span class="hud-label">MULTI</span><span class="hud-value" id="balls">1</span></div>
+      <div class="hud-item"><span class="hud-label">SPEED</span><span class="hud-value" id="speed">1.0</span></div>
+
+      <div class="fever-wrap">
+        <span class="hud-label">FEVER</span>
+        <div class="fever-bar"><div class="fever-fill" id="fever-fill"></div></div>
+        <span class="fever-tag" id="fever-tag">FEVER x2</span>
+      </div>
+    </div>
+
     <button class="menu-btn" id="open-ranking-btn">RANKING</button>
   </div>
 
@@ -104,13 +174,18 @@
     <canvas id="gameCanvas" width="300" height="400"></canvas>
 
     <div id="ranking-board">
-      <h2 style="color:var(--neon-pink); margin-top: 0;">GAME OVER</h2>
+      <h2 style="color:var(--neon-pink); margin-top: 0;" id="rank-title">GAME OVER</h2>
       <div id="rank-list"></div>
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-      <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
+      <button class="menu-btn" id="submit-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
+
+      <!-- 復活（1回だけ） -->
+      <button class="menu-btn pink" style="margin-top:10px; display:none;" id="revive-btn" onclick="revive()">REVIVE (-50% SCORE)</button>
     </div>
+
+    <div class="toast" id="toast"></div>
   </div>
 
   <div class="controls">
@@ -120,7 +195,7 @@
   <!-- 右上：歯車 -->
   <button id="admin-gear" aria-label="admin" onclick="toggleAdminModal()">⚙</button>
 
-  <!-- 管理者モーダル（ログイン/全削除/管理者ランキングへ） -->
+  <!-- 管理者モーダル -->
   <div id="admin-modal" class="admin-modal-backdrop" style="display:none;">
     <div class="admin-modal">
       <div class="admin-modal-header">
@@ -162,32 +237,179 @@
       </div>
 
       <div id="admin-scores-msg" class="admin-msg"></div>
-
       <div id="admin-scores-list" style="max-height: 55vh; overflow:auto; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:10px;"></div>
-
-      <div class="admin-hint" style="margin-top:10px;">
-        ※ 各行の🗑でそのデータだけ削除（MongoDBの_idで削除）
-      </div>
+      <div class="admin-hint" style="margin-top:10px;">※ 各行の🗑でそのデータだけ削除（MongoDBの_idで削除）</div>
     </div>
   </div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreEl = document.getElementById('score');
-
-    // RenderのURL（あなたのサービス）
+    // ====== サーバー ======
     const SERVER_URL = 'https://block-r057.onrender.com';
 
+    // ====== Canvas ======
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // HUD
+    const scoreEl = document.getElementById('score');
+    const lifeEl = document.getElementById('life');
+    const comboEl = document.getElementById('combo');
+    const ballsEl = document.getElementById('balls');
+    const speedEl = document.getElementById('speed');
+    const feverFillEl = document.getElementById('fever-fill');
+    const feverTagEl = document.getElementById('fever-tag');
+
+    const toastEl = document.getElementById('toast');
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.style.display = 'block';
+      clearTimeout(toastEl._t);
+      toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
+    }
+
+    // UI
     const rankingBoard = document.getElementById('ranking-board');
     const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
     const openRankingBtn = document.getElementById('open-ranking-btn');
+    const rankTitleEl = document.getElementById('rank-title');
+    const reviveBtn = document.getElementById('revive-btn');
 
+    // ====== ④ライフ制＋復活 ======
+    let lives = 3;
+    const MAX_LIVES = 3;
+    let reviveUsed = false;
+
+    // ====== スコア/コンボ ======
     let score = 0;
+    let combo = 0;          // 連続破壊数（パドルに当たったらリセット）
+    let comboMul = 1.0;     // 表示用
+
+    // ====== ②フィーバー ======
+    let fever = 0;          // 0..100
+    let feverActive = false;
+    let feverEndAt = 0;     // performance.now()で管理
+    const FEVER_DURATION_MS = 8000;
+    const FEVER_MULT = 2.0;
+
+    // ====== ゲーム状態 ======
     let isGameOver = false;
     let pausedByRanking = false;
 
+    // ====== パドル ======
+    const paddleBaseW = 50;
+    const paddle = { x: 125, y: 370, w: paddleBaseW, h: 10, color: '#00d2ff' };
+
+    // ====== ボール（③マルチボール対応） ======
+    const baseBallSpeed = 3.1;
+    let speedScale = 1.0; // SPEED HUD用
+
+    function makeBall(x, y, dx, dy) {
+      return { x, y, dx, dy, r: 6, pierceUntil: 0 }; // pierceUntil: timestamp
+    }
+    let balls = [ makeBall(150, 200, baseBallSpeed, -baseBallSpeed) ];
+
+    function resetToSingleBall() {
+      balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
+    }
+
+    // ====== ブロック ======
+    const blockRowCount = 5;
+    const blockColumnCount = 6;
+    const blockWidth = 40;
+    const blockHeight = 15;
+    const blockPadding = 5;
+    const blockOffsetTop = 40;
+    const blockOffsetLeft = 15;
+    let blocks = [];
+    function initBlocks() {
+      blocks = [];
+      for(let c=0; c<blockColumnCount; c++) {
+        blocks[c] = [];
+        for(let r=0; r<blockRowCount; r++) {
+          blocks[c][r] = { x: 0, y: 0, status: 1 };
+        }
+      }
+    }
+    initBlocks();
+
+    // ====== ③パワーアップ（落下アイテム） ======
+    const powerups = []; // {x,y,vy,type,activeUntil?}
+    const POWER_CHANCE = 0.18; // 18%で落ちる
+    const POWER_VY = 2.2;
+
+    const PowerType = {
+      WIDE: 'WIDE',     // パドル幅UP
+      SLOW: 'SLOW',     // 速度DOWN
+      MULTI: 'MULTI',   // マルチボール
+      PIERCE: 'PIERCE', // 貫通
+    };
+
+    function maybeDropPowerup(x, y) {
+      if (Math.random() > POWER_CHANCE) return;
+
+      const roll = Math.random();
+      let type = PowerType.WIDE;
+      if (roll < 0.40) type = PowerType.WIDE;
+      else if (roll < 0.65) type = PowerType.SLOW;
+      else if (roll < 0.85) type = PowerType.MULTI;
+      else type = PowerType.PIERCE;
+
+      powerups.push({ x, y, vy: POWER_VY, type });
+    }
+
+    function powerLabel(type) {
+      if (type === PowerType.WIDE) return 'W';
+      if (type === PowerType.SLOW) return 'S';
+      if (type === PowerType.MULTI) return 'M';
+      if (type === PowerType.PIERCE) return 'P';
+      return '?';
+    }
+
+    // 効果管理（シンプルにタイマーで戻す）
+    let wideTimer = null;
+    let slowTimer = null;
+    const WIDE_MS = 8000;
+    const SLOW_MS = 6000;
+    const PIERCE_MS = 6000;
+
+    function applyPower(type) {
+      const now = performance.now();
+
+      if (type === PowerType.WIDE) {
+        clearTimeout(wideTimer);
+        paddle.w = Math.min(paddleBaseW * 1.8, 95);
+        toast('POWER: WIDE');
+        wideTimer = setTimeout(() => {
+          paddle.w = paddleBaseW;
+        }, WIDE_MS);
+      }
+
+      if (type === PowerType.SLOW) {
+        clearTimeout(slowTimer);
+        speedScale = 0.78;
+        toast('POWER: SLOW');
+        slowTimer = setTimeout(() => {
+          speedScale = 1.0;
+        }, SLOW_MS);
+      }
+
+      if (type === PowerType.MULTI) {
+        toast('POWER: MULTI');
+        // 現在の先頭ボールを基準に2個追加
+        const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
+        balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
+        balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
+      }
+
+      if (type === PowerType.PIERCE) {
+        toast('POWER: PIERCE');
+        // 全ボールに貫通時間を付与
+        balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
+      }
+    }
+
+    // ====== 名前入力（初回だけ） ======
     function updateNameUI() {
       const saved = localStorage.getItem('playerName');
       const hasName = !!(saved && saved.trim());
@@ -202,51 +424,13 @@
     }
     updateNameUI();
 
-    const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
-    const ball = { x: 150, y: 200, dx: 3, dy: -3, r: 6 };
-
-    const blockRowCount = 5;
-    const blockColumnCount = 6;
-    const blockWidth = 40;
-    const blockHeight = 15;
-    const blockPadding = 5;
-    const blockOffsetTop = 40;
-    const blockOffsetLeft = 15;
-    let blocks = [];
-
-    for (let c=0; c<blockColumnCount; c++) {
-      blocks[c] = [];
-      for (let r=0; r<blockRowCount; r++) blocks[c][r] = { x: 0, y: 0, status: 1 };
-    }
-
-    function collisionDetection() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) {
-          const b = blocks[c][r];
-          if (b.status === 1) {
-            if (ball.x > b.x && ball.x < b.x + blockWidth && ball.y > b.y && ball.y < b.y + blockHeight) {
-              ball.dy = -ball.dy;
-              b.status = 0;
-              score += 10;
-              scoreEl.innerText = score;
-              if (score === blockRowCount * blockColumnCount * 10) resetBlocks();
-            }
-          }
-        }
-      }
-    }
-
-    function resetBlocks() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
-      }
-      ball.dy *= 1.1;
-    }
-
-    function drawBall() {
+    // ====== 描画 ======
+    function drawBall(b) {
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
-      ctx.fillStyle = "#fff";
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      // 貫通中は少しピンク寄り
+      const pierceOn = performance.now() < b.pierceUntil;
+      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
       ctx.fill();
       ctx.closePath();
     }
@@ -257,11 +441,11 @@
     }
 
     function drawBlocks() {
-      for (let c=0; c<blockColumnCount; c++) {
-        for (let r=0; r<blockRowCount; r++) {
-          if (blocks[c][r].status === 1) {
-            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) {
+          if(blocks[c][r].status === 1) {
+            let bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
+            let by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
             blocks[c][r].x = bx;
             blocks[c][r].y = by;
             ctx.fillStyle = `hsl(${r * 40}, 70%, 50%)`;
@@ -271,61 +455,258 @@
       }
     }
 
-    function update() {
-      if (isGameOver) return;
+    function drawPowerups() {
+      powerups.forEach(p => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 9, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.25)";
+        ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial Black";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(powerLabel(p.type), p.x, p.y + 0.5);
+        ctx.restore();
+      });
+    }
 
-      if (ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) ball.dx = -ball.dx;
-      if (ball.y + ball.dy < ball.r) ball.dy = -ball.dy;
+    // ====== ①コンボ/②フィーバー計算 ======
+    function addScore(base) {
+      // comboMul: 連続破壊で少しずつ上がる（上限つき）
+      comboMul = Math.min(1 + combo * 0.08, 2.5); // 0破壊=1.0, 10連=1.8, 上限2.5
+      const feverMul = feverActive ? FEVER_MULT : 1.0;
+      const add = Math.floor(base * comboMul * feverMul);
 
-      if (ball.y + ball.dy > paddle.y - ball.r) {
-        if (ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
-          ball.dy = -ball.dy;
-          const hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-          ball.dx = hitPos * 4;
-        } else if (ball.y > canvas.height) {
-          pausedByRanking = false;
-          isGameOver = true;
+      score += add;
+      scoreEl.innerText = score;
 
-          const saved = localStorage.getItem('playerName');
-          const hasName = !!(saved && saved.trim());
+      comboEl.innerText = `x${(comboMul * feverMul).toFixed(1)}`;
+    }
 
-          if (hasName) {
-            fetch(`${SERVER_URL}/api/save-score`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: saved.trim().slice(0, 10), score })
-            }).finally(() => showRanking(true));
-          } else {
-            showRanking(true);
+    function addFever(amount) {
+      if (feverActive) return;
+      fever = Math.min(100, fever + amount);
+      feverFillEl.style.width = `${fever}%`;
+      if (fever >= 100) startFever();
+    }
+
+    function startFever() {
+      feverActive = true;
+      fever = 0;
+      feverFillEl.style.width = '0%';
+      feverTagEl.classList.add('on');
+      feverEndAt = performance.now() + FEVER_DURATION_MS;
+      toast('FEVER!');
+    }
+
+    function updateFever() {
+      if (!feverActive) return;
+      if (performance.now() >= feverEndAt) {
+        feverActive = false;
+        feverTagEl.classList.remove('on');
+        toast('FEVER END');
+      }
+    }
+
+    // ====== 衝突判定（マルチボール対応） ======
+    function collisionDetectionForBall(b) {
+      const pierceOn = performance.now() < b.pierceUntil;
+
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) {
+          let blk = blocks[c][r];
+          if(blk.status === 1) {
+            if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
+              // ヒット
+              blk.status = 0;
+
+              // 反射（貫通中は反射しない）
+              if (!pierceOn) b.dy = -b.dy;
+
+              // ①コンボ加算（ブロック破壊が続くほど）
+              combo += 1;
+
+              // ②フィーバーゲージ加算
+              addFever(8);
+
+              // スコア加算（コンボ倍率＋フィーバー倍率）
+              addScore(10);
+
+              // ③パワーアップ落下
+              maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
+
+              // 全消しで次ウェーブ（速度少しUP）
+              if (isAllCleared()) {
+                resetBlocks();
+                // 難易度UP：速度少し上げる（ただし上げすぎない）
+                speedScale = Math.min(speedScale * 1.06, 1.35);
+                toast('NEXT WAVE!');
+              }
+            }
           }
         }
       }
-
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-
-      collisionDetection();
     }
 
+    function isAllCleared() {
+      for (let c=0; c<blockColumnCount; c++) {
+        for (let r=0; r<blockRowCount; r++) {
+          if (blocks[c][r].status === 1) return false;
+        }
+      }
+      return true;
+    }
+
+    function resetBlocks() {
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
+      }
+    }
+
+    // ====== ③パワーアップ更新/取得 ======
+    function updatePowerups() {
+      // 落下
+      for (let i = powerups.length - 1; i >= 0; i--) {
+        const p = powerups[i];
+        p.y += p.vy;
+
+        // パドル取得判定
+        const hit = (p.y >= paddle.y - 10 && p.y <= paddle.y + paddle.h + 10 &&
+                     p.x >= paddle.x && p.x <= paddle.x + paddle.w);
+        if (hit) {
+          applyPower(p.type);
+          powerups.splice(i, 1);
+          continue;
+        }
+
+        // 画面外
+        if (p.y > canvas.height + 20) {
+          powerups.splice(i, 1);
+        }
+      }
+    }
+
+    // ====== ④ミス処理（ライフ消費） ======
+    function loseLife() {
+      lives -= 1;
+      lifeEl.innerText = lives;
+
+      // パワーアップ落下はリセットしても良い（ここでは残す/好み）
+      resetToSingleBall();
+      paddle.x = (canvas.width - paddle.w) / 2;
+
+      // コンボもリセット（ミスは痛い）
+      combo = 0;
+      comboMul = 1.0;
+      comboEl.innerText = 'x1.0';
+
+      toast(`MISS! LIFE ${lives}`);
+
+      if (lives <= 0) {
+        // 0になったらゲームオーバー表示（復活の可能性）
+        isGameOver = true;
+        showRanking(true);
+      }
+    }
+
+    // ====== ボール更新（マルチボール） ======
+    function updateBalls() {
+      const now = performance.now();
+      updateFever();
+
+      // HUD更新
+      ballsEl.innerText = String(balls.length);
+      speedEl.innerText = speedScale.toFixed(2);
+
+      // まず各ボール移動/反射
+      for (let i = balls.length - 1; i >= 0; i--) {
+        const b = balls[i];
+
+        const dx = b.dx * speedScale;
+        const dy = b.dy * speedScale;
+
+        // 壁
+        if (b.x + dx > canvas.width - b.r || b.x + dx < b.r) b.dx = -b.dx;
+        if (b.y + dy < b.r) b.dy = -b.dy;
+
+        // パドル判定（当たったらコンボリセット）
+        if (b.y + dy > paddle.y - b.r) {
+          if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
+            b.dy = -Math.abs(b.dy);
+
+            // 角度変化
+            const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
+            b.dx = hitPos * 4;
+
+            // ①コンボリセット（ここが「繋げると強い」設計）
+            combo = 0;
+            comboMul = 1.0;
+            comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
+
+          } else if (b.y > canvas.height) {
+            // このボールが落ちた → 消す
+            balls.splice(i, 1);
+            continue;
+          }
+        }
+
+        // 移動
+        b.x += b.dx * speedScale;
+        b.y += b.dy * speedScale;
+
+        // ブロック当たり
+        collisionDetectionForBall(b);
+      }
+
+      // ボールが全部消えたらライフ消費
+      if (balls.length === 0 && !isGameOver) {
+        loseLife();
+      }
+    }
+
+    // ====== ループ ======
     function draw() {
+      if (isGameOver) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // フィーバー中はほんのり明るいフィルタ感
+      if (feverActive) {
+        ctx.save();
+        ctx.fillStyle = "rgba(255,0,127,0.03)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
       drawBlocks();
-      drawBall();
+      drawPowerups();
+      balls.forEach(drawBall);
       drawPaddle();
-      update();
-      if (!isGameOver) requestAnimationFrame(draw);
+
+      updatePowerups();
+      updateBalls();
+
+      requestAnimationFrame(draw);
     }
 
+    // ====== ランキング表示 ======
     async function showRanking(isGameOverMode) {
-      const titleEl = rankingBoard.querySelector('h2');
-      titleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
+      rankTitleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
       rankingBoard.style.display = 'block';
+
+      // 復活ボタン表示条件：ゲームオーバー時、まだ復活未使用
+      reviveBtn.style.display = (isGameOverMode && !reviveUsed) ? 'block' : 'none';
+
       updateNameUI();
 
       try {
-        // 公開ランキング：最大100件表示
+        // 公開ランキング：最大100件
         const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
         const data = await res.json();
+
         rankList.innerHTML = '';
         data.forEach((s, i) => {
           const row = document.createElement('div');
@@ -342,6 +723,37 @@
       }
     }
 
+    // ====== 復活（1回だけ、スコア半減） ======
+    function revive() {
+      if (reviveUsed) return;
+      reviveUsed = true;
+
+      // スコア半減
+      score = Math.floor(score * 0.5);
+      scoreEl.innerText = score;
+
+      // ライフ1で復帰
+      lives = 1;
+      lifeEl.innerText = lives;
+
+      // 状態復帰
+      rankingBoard.style.display = 'none';
+      isGameOver = false;
+
+      // ボール/コンボ/フィーバーリセット（気持ちよく再開）
+      resetToSingleBall();
+      combo = 0;
+      comboMul = 1.0;
+      fever = 0;
+      feverActive = false;
+      feverFillEl.style.width = '0%';
+      feverTagEl.classList.remove('on');
+
+      toast('REVIVED!');
+      requestAnimationFrame(draw);
+    }
+
+    // ====== 送信 ======
     async function submitScore() {
       let saved = localStorage.getItem('playerName');
       let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
@@ -363,6 +775,7 @@
       location.reload();
     }
 
+    // ランキングボタン（停止して表示）
     openRankingBtn.addEventListener('click', () => {
       pausedByRanking = true;
       isGameOver = true;
@@ -371,8 +784,8 @@
 
     function closeRanking() {
       rankingBoard.style.display = 'none';
-      const titleEl = rankingBoard.querySelector('h2');
-      if (titleEl.textContent === "GAME OVER") return;
+      // GAME OVER表示中は再開しない（復活 or リロード）
+      if (rankTitleEl.textContent === "GAME OVER") return;
 
       if (pausedByRanking) {
         pausedByRanking = false;
@@ -389,25 +802,37 @@
       nameInput.focus();
     }
 
+    // ====== 操作 ======
     const touchArea = document.getElementById('touch-control');
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
       const rect = touchArea.getBoundingClientRect();
       const touchX = e.touches[0].clientX - rect.left;
       paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+      if(paddle.x < 0) paddle.x = 0;
+      if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     }, { passive: false });
 
     touchArea.addEventListener('mousemove', (e) => {
       const rect = touchArea.getBoundingClientRect();
       const x = e.clientX - rect.left;
       paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
-      if (paddle.x < 0) paddle.x = 0;
-      if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+      if(paddle.x < 0) paddle.x = 0;
+      if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     });
 
-    // ===== 管理者UI =====
+    // ====== HUD初期 ======
+    function refreshHUD() {
+      scoreEl.innerText = score;
+      lifeEl.innerText = lives;
+      comboEl.innerText = 'x1.0';
+      ballsEl.innerText = String(balls.length);
+      speedEl.innerText = speedScale.toFixed(2);
+      feverFillEl.style.width = `${fever}%`;
+    }
+    refreshHUD();
+
+    // ====== 管理者UI（既存） ======
     function toggleAdminModal(force) {
       const modal = document.getElementById('admin-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -499,7 +924,6 @@
       } catch (e) {}
     }
 
-    // ===== 管理者ランキング（行ごと削除） =====
     function toggleAdminScores(force) {
       const modal = document.getElementById('admin-scores-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -581,7 +1005,8 @@
       }
     }
 
-    draw();
+    // ====== スタート ======
+    requestAnimationFrame(draw);
   </script>
 </body>
 </html>
