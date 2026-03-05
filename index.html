@@ -8,7 +8,7 @@
     :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-    .header { margin-top: 18px; text-align: center; }
+    .header { margin-top: 18px; text-align: center; position: relative; width: 100%; max-width: 380px; }
     .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
     #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
@@ -17,11 +17,9 @@
     .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
     .touch-area { width: 90%; height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
-    /* 共通ボタン */
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    /* 画面（モーダル） */
     .panel {
       display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(5, 5, 20, 0.95); border: 2px solid rgba(255,255,255,0.12);
@@ -30,10 +28,8 @@
     .panel h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 1px; }
     .sub { font-size: 12px; color: rgba(255,255,255,0.65); margin: 6px 0 14px; }
 
-    /* START画面 */
     #start-panel { display: block; border-color: rgba(0,210,255,0.35); }
 
-    /* ランキング画面 */
     #ranking-panel { border-color: rgba(255,0,127,0.55); }
     #rank-list{ max-height: 220px; overflow: auto; padding-right: 6px; text-align:left; }
     .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; }
@@ -44,27 +40,92 @@
       background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
       padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
     }
+
+    /* Pause button */
+    #pause-btn{
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      cursor: pointer;
+      font-weight: 900;
+      letter-spacing: 1px;
+      display: none; /* ゲーム中だけ表示 */
+      user-select: none;
+    }
+    #pause-btn:hover{
+      border-color: rgba(0,210,255,0.6);
+      box-shadow: 0 0 10px rgba(0,210,255,0.25);
+    }
+
+    /* Pause overlay */
+    #pause-panel{
+      display:none;
+      border-color: rgba(255,255,255,0.18);
+    }
+    #pause-panel .menu-btn{ margin-top: 10px; }
+
+    /* Tutorial (one-time) */
+    #tutorial-panel{
+      display:none;
+      border-color: rgba(255,255,255,0.2);
+    }
+    .tip{
+      text-align:left;
+      font-size: 12px;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.5;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px;
+      margin: 10px 0 14px;
+    }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
+    <div id="pause-btn">⏸</div>
   </div>
 
   <div id="game-container">
-    <!-- canvasは元に戻す -->
     <canvas id="gameCanvas" width="300" height="400"></canvas>
 
-    <!-- START画面 -->
+    <!-- START -->
     <div id="start-panel" class="panel">
       <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
-      <div class="sub">Tap START to play<br>Combo / Fever / Powerups</div>
+      <div class="sub">Tap START to play</div>
       <button class="menu-btn" id="start-btn">START</button>
-      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → smaller</div>
+      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10</div>
     </div>
 
-    <!-- GAME OVER + Ranking -->
+    <!-- Tutorial (one-time) -->
+    <div id="tutorial-panel" class="panel">
+      <h2 style="color:#fff;">HOW TO PLAY</h2>
+      <div class="tip">
+        ・下のエリアをドラッグしてパドル移動<br>
+        ・ブロック連続破壊でCOMBO（スコアUP）<br>
+        ・FEVERでスコア2倍（一定数壊すと発動）<br>
+        ・落ちてくる W/M/P はパワーアップ
+      </div>
+      <button class="menu-btn" id="tutorial-ok-btn">OK</button>
+    </div>
+
+    <!-- Pause -->
+    <div id="pause-panel" class="panel">
+      <h2 style="color:#fff;">PAUSED</h2>
+      <div class="sub">Tap resume to continue</div>
+      <button class="menu-btn" id="resume-btn">RESUME</button>
+      <button class="menu-btn" id="restart-btn">RESTART</button>
+    </div>
+
+    <!-- Game Over + Ranking -->
     <div id="ranking-panel" class="panel">
       <h2 style="color:var(--neon-pink);">GAME OVER</h2>
       <div class="sub">Your score: <span id="final-score">0</span></div>
@@ -91,14 +152,25 @@
     const scoreEl = document.getElementById('score');
     const toastEl = document.getElementById('toast');
 
+    const pauseBtn = document.getElementById('pause-btn');
+
     const startPanel = document.getElementById('start-panel');
     const startBtn = document.getElementById('start-btn');
+
+    const tutorialPanel = document.getElementById('tutorial-panel');
+    const tutorialOkBtn = document.getElementById('tutorial-ok-btn');
+
+    const pausePanel = document.getElementById('pause-panel');
+    const resumeBtn = document.getElementById('resume-btn');
+    const restartBtn = document.getElementById('restart-btn');
 
     const rankingPanel = document.getElementById('ranking-panel');
     const finalScoreEl = document.getElementById('final-score');
     const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
     const submitBtn = document.getElementById('submit-btn');
+
+    const touchArea = document.getElementById('touch-control');
 
     function toast(msg) {
       toastEl.textContent = msg;
@@ -107,14 +179,15 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
     }
 
-    // ===== ゲーム設定 =====
+    // ===== ゲーム状態 =====
     let running = false;
     let isGameOver = false;
+    let isPaused = false;
 
     // LIFE=2
     let lives = 2;
 
-    // score/Combo/Fever（表示はスコアだけ、内部は動く）
+    // Score / Combo / Fever
     let score = 0;
     let combo = 0;
     let comboMul = 1.0;
@@ -129,10 +202,10 @@
     const paddleBaseW = 60;
     const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // Ball size: 20 -> smaller by score
+    // Ball size: 20 -> half (10) minimum
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
-    const BALL_R_MIN = 4;
+    const BALL_R_MIN = 10;          // ★ half size minimum
     const BALL_SHRINK_PER_SCORE = 250;
 
     function calcBallRadius() {
@@ -156,7 +229,7 @@
       syncBallRadius();
     }
 
-    // Blocks（8×6）
+    // Blocks (8x6)
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -201,13 +274,6 @@
       powerups.push({ x, y, vy: POWER_VY, type });
     }
 
-    function powerLabel(type) {
-      if (type === PowerType.WIDE) return 'W';
-      if (type === PowerType.MULTI) return 'M';
-      if (type === PowerType.PIERCE) return 'P';
-      return '?';
-    }
-
     let wideTimer = null;
     const WIDE_MS = 8000;
     const PIERCE_MS = 6000;
@@ -236,7 +302,7 @@
       }
     }
 
-    // ===== ルール（スコア/フィーバー）=====
+    // ===== スコア/フィーバー =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -312,7 +378,7 @@
         ctx.font = "10px Arial Black";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(powerLabel(p.type), p.x, p.y + 0.5);
+        ctx.fillText(p.type === 'WIDE' ? 'W' : p.type === 'MULTI' ? 'M' : 'P', p.x, p.y + 0.5);
         ctx.restore();
       });
     }
@@ -377,9 +443,7 @@
 
       toast(`MISS! LIFE ${lives}`);
 
-      if (lives <= 0) {
-        endGame();
-      }
+      if (lives <= 0) endGame();
     }
 
     function updateBalls() {
@@ -397,7 +461,7 @@
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
-            // パドルに当たったらコンボリセット
+            // パドルでコンボリセット
             combo = 0;
             comboMul = 1.0;
           } else if (b.y > canvas.height) {
@@ -416,8 +480,7 @@
     }
 
     function loop() {
-      if (!running) return;
-      if (isGameOver) return;
+      if (!running || isPaused || isGameOver) return;
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -440,6 +503,14 @@
     }
 
     // ===== 画面遷移 =====
+    function showPanel(panelEl) {
+      startPanel.style.display = 'none';
+      tutorialPanel.style.display = 'none';
+      pausePanel.style.display = 'none';
+      rankingPanel.style.display = 'none';
+      if (panelEl) panelEl.style.display = 'block';
+    }
+
     function startGame() {
       // 初期化
       score = 0;
@@ -455,24 +526,25 @@
       paddle.x = (canvas.width - paddle.w)/2;
 
       resetToSingleBall();
-
       scoreEl.innerText = '0';
 
-      // 画面
-      startPanel.style.display = 'none';
-      rankingPanel.style.display = 'none';
-
       isGameOver = false;
+      isPaused = false;
       running = true;
+
+      pauseBtn.style.display = 'block';
+      pauseBtn.textContent = '⏸';
+
       requestAnimationFrame(loop);
     }
 
     async function endGame() {
       running = false;
       isGameOver = true;
+      pauseBtn.style.display = 'none';
 
       finalScoreEl.innerText = String(score);
-      rankingPanel.style.display = 'block';
+      showPanel(rankingPanel);
 
       // 前回名前復元
       const savedName = localStorage.getItem('playerName');
@@ -498,7 +570,66 @@
       }
     }
 
-    // ===== 送信 =====
+    // ===== Pause =====
+    function pauseGame() {
+      if (!running || isGameOver) return;
+      isPaused = true;
+      pauseBtn.textContent = '▶';
+      showPanel(pausePanel);
+    }
+
+    function resumeGame() {
+      if (!running || isGameOver) return;
+      isPaused = false;
+      pauseBtn.textContent = '⏸';
+      showPanel(null);
+      requestAnimationFrame(loop);
+    }
+
+    function restartFromPause() {
+      // START画面に戻す（やり直し）
+      running = false;
+      isPaused = false;
+      isGameOver = false;
+      pauseBtn.style.display = 'none';
+      showPanel(startPanel);
+    }
+
+    pauseBtn.addEventListener('click', () => {
+      if (!running || isGameOver) return;
+      if (isPaused) resumeGame();
+      else pauseGame();
+    });
+
+    resumeBtn.addEventListener('click', resumeGame);
+    restartBtn.addEventListener('click', restartFromPause);
+
+    // ===== Tutorial (one-time) =====
+    function shouldShowTutorial() {
+      return localStorage.getItem('tutorialSeen') !== '1';
+    }
+
+    function markTutorialSeen() {
+      localStorage.setItem('tutorialSeen', '1');
+    }
+
+    function onStartPressed() {
+      // 初回だけチュートリアル
+      if (shouldShowTutorial()) {
+        showPanel(tutorialPanel);
+      } else {
+        showPanel(null);
+        startGame();
+      }
+    }
+
+    tutorialOkBtn.addEventListener('click', () => {
+      markTutorialSeen();
+      showPanel(null);
+      startGame();
+    });
+
+    // ===== Submit =====
     async function submitScore() {
       const name = (nameInput.value || 'PLAYER').trim().slice(0, 10) || 'PLAYER';
       localStorage.setItem('playerName', name);
@@ -511,35 +642,34 @@
         });
       } catch (e) {}
 
-      // リプレイ
-      startPanel.style.display = 'block';
-      rankingPanel.style.display = 'none';
+      // リプレイへ
+      showPanel(startPanel);
     }
 
     // ===== 操作 =====
-    const touchArea = document.getElementById('touch-control');
+    function movePaddleByClientX(clientX) {
+      const rect = touchArea.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const ratio = x / rect.width;
+      paddle.x = ratio * canvas.width - paddle.w/2;
+      clampPaddle();
+    }
+
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
-      const rect = touchArea.getBoundingClientRect();
-      const touchX = e.touches[0].clientX - rect.left;
-      paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
-      clampPaddle();
+      movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
 
     touchArea.addEventListener('mousemove', (e) => {
-      const rect = touchArea.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
-      clampPaddle();
+      movePaddleByClientX(e.clientX);
     });
 
-    // ===== イベント =====
-    startBtn.addEventListener('click', startGame);
+    // ===== Bind buttons =====
+    startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
-    // 初期：STARTだけ見せる
-    startPanel.style.display = 'block';
-    rankingPanel.style.display = 'none';
+    // 初期：STARTだけ
+    showPanel(startPanel);
   </script>
 </body>
 </html>
