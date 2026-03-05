@@ -8,15 +8,12 @@
     :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-    /* ヘッダー */
     .header { margin-top: 20px; text-align: center; display:flex; flex-direction:column; align-items:center; gap:12px; }
     .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-    /* メインエリア */
     #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
     canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
 
-    /* ランキングUI */
     #ranking-board {
       display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 25px;
@@ -28,43 +25,31 @@
     .menu-btn { width: 100%; padding: 15px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    /* ヘッダー用のボタンだけ幅調整 */
     #open-ranking-btn { max-width: 300px; width: 300px; }
 
-    /* 操作エリア */
     .controls { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 20px; }
     .touch-area { width: 90%; height: 70px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
-    /* ===== 右上の歯車ボタン ===== */
+    /* 右上の歯車ボタン */
     #admin-gear{
-      position: fixed;
-      top: 14px;
-      right: 14px;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
+      position: fixed; top: 14px; right: 14px;
+      width: 44px; height: 44px; border-radius: 14px;
       border: 1px solid rgba(255,255,255,0.15);
       background: rgba(255,255,255,0.06);
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 2000;
-      backdrop-filter: blur(10px);
+      color: #fff; font-size: 18px; cursor: pointer;
+      z-index: 2000; backdrop-filter: blur(10px);
     }
     #admin-gear:hover{
       border-color: rgba(0,210,255,0.6);
       box-shadow: 0 0 10px rgba(0,210,255,0.25);
     }
 
-    /* ===== 管理者モーダル ===== */
+    /* 管理者モーダル */
     .admin-modal-backdrop{
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background: rgba(0,0,0,0.6);
       z-index: 2500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
     }
     .admin-modal{
       width: min(420px, 92vw);
@@ -75,77 +60,30 @@
       backdrop-filter: blur(10px);
     }
     .admin-modal-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
+      display:flex; align-items:center; justify-content:space-between;
       margin-bottom: 10px;
     }
-    .admin-title{
-      font-size: 18px;
-      color: #ff007f;
-    }
-    .admin-close{
-      border: none;
-      background: transparent;
-      color: #fff;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    .admin-section{
-      margin-top: 12px;
-    }
-    .admin-label{
-      font-size: 12px;
-      color: #aaa;
-      margin-bottom: 6px;
-    }
+    .admin-title{ font-size: 18px; color: #ff007f; }
+    .admin-close{ border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer; }
+    .admin-section{ margin-top: 12px; }
+    .admin-label{ font-size: 12px; color: #aaa; margin-bottom: 6px; }
     .admin-input{
-      width: 100%;
-      padding: 10px;
+      width: 100%; padding: 10px;
       border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.15);
-      background: #111;
-      color: #fff;
-      outline: none;
+      background: #111; color: #fff; outline: none;
     }
-    .admin-row{
-      display:flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
+    .admin-row{ display:flex; gap: 8px; margin-top: 10px; }
     .admin-btn{
-      flex: 1;
-      padding: 10px;
-      border-radius: 999px;
-      border: 2px solid #0f0;
-      background: transparent;
-      color: #0f0;
-      font-weight: bold;
-      cursor: pointer;
+      flex: 1; padding: 10px; border-radius: 999px;
+      border: 2px solid #0f0; background: transparent; color: #0f0;
+      font-weight: bold; cursor: pointer;
     }
-    .admin-btn:hover{
-      background: #0f0;
-      color: #000;
-    }
-    .admin-btn.danger{
-      border-color: #ff007f;
-      color: #ff007f;
-    }
-    .admin-btn.danger:hover{
-      background: #ff007f;
-      color: #000;
-    }
-    .admin-msg{
-      margin-top: 8px;
-      font-size: 12px;
-      color: #bbb;
-      min-height: 1em;
-    }
-    .admin-hint{
-      margin-top: 8px;
-      font-size: 12px;
-      color: #777;
-    }
+    .admin-btn:hover{ background: #0f0; color: #000; }
+    .admin-btn.danger{ border-color: #ff007f; color: #ff007f; }
+    .admin-btn.danger:hover{ background: #ff007f; color: #000; }
+    .admin-msg{ margin-top: 8px; font-size: 12px; color: #bbb; min-height: 1em; }
+    .admin-hint{ margin-top: 8px; font-size: 12px; color: #777; }
   </style>
 </head>
 <body>
@@ -161,8 +99,6 @@
     <div id="ranking-board">
       <h2 style="color:var(--neon-pink); margin-top: 0;">GAME OVER</h2>
       <div id="rank-list"></div>
-
-      <!-- 初回だけ表示（保存名がある場合はJSで非表示にする） -->
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
 
       <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
@@ -187,7 +123,7 @@
       </div>
 
       <div class="admin-section">
-        <div class="admin-label">ADMIN TOKEN（このタブを閉じるまで保持）</div>
+        <div class="admin-label">ADMIN TOKEN（ログイン時にサーバーで検証）</div>
         <input type="password" id="admin-token" class="admin-input" placeholder="ADMIN TOKEN" />
         <div class="admin-row">
           <button class="admin-btn" onclick="adminLogin()">LOGIN</button>
@@ -209,45 +145,35 @@
     const ctx = canvas.getContext('2d');
     const scoreEl = document.getElementById('score');
 
-    // サーバー設定（RenderのURL）
+    // RenderのURL
     const SERVER_URL = 'https://block-r057.onrender.com';
 
-    // UI
     const rankingBoard = document.getElementById('ranking-board');
     const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
     const openRankingBtn = document.getElementById('open-ranking-btn');
 
-    // ゲーム状態
     let score = 0;
-    let isGameOver = false;        // true の間は draw() が止まる
-    let pausedByRanking = false;   // ランキングボタンで一時停止したか
+    let isGameOver = false;
+    let pausedByRanking = false;
 
     function updateNameUI() {
       const saved = localStorage.getItem('playerName');
       const hasName = !!(saved && saved.trim());
-
       if (hasName) {
         nameInput.value = saved;
-        nameInput.style.display = 'none'; // 入力欄を隠す
+        nameInput.style.display = 'none';
         nameInput.disabled = true;
-        nameInput.placeholder = saved;
       } else {
         nameInput.style.display = 'block';
         nameInput.disabled = false;
       }
     }
-
-    // 初回ロード時に反映
     updateNameUI();
 
-    // パドル設定
     const paddle = { x: 125, y: 370, w: 50, h: 10, color: '#00d2ff' };
-
-    // ボール設定
     const ball = { x: 150, y: 200, dx: 3, dy: -3, r: 6 };
 
-    // ブロック設定
     const blockRowCount = 5;
     const blockColumnCount = 6;
     const blockWidth = 40;
@@ -257,17 +183,14 @@
     const blockOffsetLeft = 15;
     let blocks = [];
 
-    for (let c = 0; c < blockColumnCount; c++) {
+    for (let c=0; c<blockColumnCount; c++) {
       blocks[c] = [];
-      for (let r = 0; r < blockRowCount; r++) {
-        blocks[c][r] = { x: 0, y: 0, status: 1 };
-      }
+      for (let r=0; r<blockRowCount; r++) blocks[c][r] = { x: 0, y: 0, status: 1 };
     }
 
-    // --- ロジック ---
     function collisionDetection() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) {
+      for (let c=0; c<blockColumnCount; c++) {
+        for (let r=0; r<blockRowCount; r++) {
           const b = blocks[c][r];
           if (b.status === 1) {
             if (ball.x > b.x && ball.x < b.x + blockWidth && ball.y > b.y && ball.y < b.y + blockHeight) {
@@ -275,10 +198,7 @@
               b.status = 0;
               score += 10;
               scoreEl.innerText = score;
-
-              if (score === blockRowCount * blockColumnCount * 10) {
-                resetBlocks();
-              }
+              if (score === blockRowCount * blockColumnCount * 10) resetBlocks();
             }
           }
         }
@@ -286,15 +206,15 @@
     }
 
     function resetBlocks() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) blocks[c][r].status = 1;
+      for (let c=0; c<blockColumnCount; c++) {
+        for (let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
       }
-      ball.dy *= 1.1; // 難易度アップ
+      ball.dy *= 1.1;
     }
 
     function drawBall() {
       ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+      ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
       ctx.fillStyle = "#fff";
       ctx.fill();
       ctx.closePath();
@@ -306,8 +226,8 @@
     }
 
     function drawBlocks() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) {
+      for (let c=0; c<blockColumnCount; c++) {
+        for (let r=0; r<blockRowCount; r++) {
           if (blocks[c][r].status === 1) {
             const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
             const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
@@ -323,19 +243,15 @@
     function update() {
       if (isGameOver) return;
 
-      // 壁バウンド
       if (ball.x + ball.dx > canvas.width - ball.r || ball.x + ball.dx < ball.r) ball.dx = -ball.dx;
       if (ball.y + ball.dy < ball.r) ball.dy = -ball.dy;
 
-      // パドル判定
       if (ball.y + ball.dy > paddle.y - ball.r) {
         if (ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
           ball.dy = -ball.dy;
-          // 当たる位置で角度を変える
-          const hitPos = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+          const hitPos = (ball.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
           ball.dx = hitPos * 4;
         } else if (ball.y > canvas.height) {
-          // GAME OVER
           pausedByRanking = false;
           isGameOver = true;
 
@@ -343,16 +259,12 @@
           const hasName = !!(saved && saved.trim());
 
           if (hasName) {
-            // 名前保存済みなら自動送信してからランキング表示
             fetch(`${SERVER_URL}/api/save-score`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ name: saved.trim().slice(0, 10), score })
-            }).finally(() => {
-              showRanking(true);
-            });
+            }).finally(() => showRanking(true));
           } else {
-            // 初回は入力させる
             showRanking(true);
           }
         }
@@ -373,31 +285,24 @@
       if (!isGameOver) requestAnimationFrame(draw);
     }
 
-    // --- ランキング/サーバー連携 ---
     async function showRanking(isGameOverMode) {
       const titleEl = rankingBoard.querySelector('h2');
       titleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
-
       rankingBoard.style.display = 'block';
       updateNameUI();
 
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking`);
         const data = await res.json();
-
         rankList.innerHTML = '';
         data.forEach((s, i) => {
           const row = document.createElement('div');
           row.className = 'rank-item';
-
           const left = document.createElement('span');
           left.textContent = `${i + 1}. ${s.name}`;
-
           const right = document.createElement('span');
           right.textContent = String(s.score);
-
-          row.appendChild(left);
-          row.appendChild(right);
+          row.append(left, right);
           rankList.appendChild(row);
         });
       } catch (e) {
@@ -405,7 +310,6 @@
       }
     }
 
-    // 初回だけ手動送信（保存名ができたら以降はGAME OVERで自動送信）
     async function submitScore() {
       let saved = localStorage.getItem('playerName');
       let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
@@ -427,20 +331,16 @@
       location.reload();
     }
 
-    // ランキングボタン：停止して表示
     openRankingBtn.addEventListener('click', () => {
       pausedByRanking = true;
       isGameOver = true;
       showRanking(false);
     });
 
-    // CLOSE：ランキングを閉じて再開（RANKINGボタンで止めたときだけ）
     function closeRanking() {
       rankingBoard.style.display = 'none';
-
       const titleEl = rankingBoard.querySelector('h2');
-      const isActuallyGameOver = titleEl.textContent === "GAME OVER";
-      if (isActuallyGameOver) return;
+      if (titleEl.textContent === "GAME OVER") return;
 
       if (pausedByRanking) {
         pausedByRanking = false;
@@ -449,7 +349,6 @@
       }
     }
 
-    // 名前変更（保存名を消して入力欄を再表示）
     function changeName() {
       localStorage.removeItem('playerName');
       nameInput.value = '';
@@ -458,27 +357,25 @@
       nameInput.focus();
     }
 
-    // --- 操作（スマホ：タッチドラッグ） ---
     const touchArea = document.getElementById('touch-control');
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
       const rect = touchArea.getBoundingClientRect();
       const touchX = e.touches[0].clientX - rect.left;
-      paddle.x = (touchX / rect.width) * canvas.width - paddle.w / 2;
+      paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
       if (paddle.x < 0) paddle.x = 0;
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     }, { passive: false });
 
-    // --- 操作（PC：マウス移動） ---
     touchArea.addEventListener('mousemove', (e) => {
       const rect = touchArea.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      paddle.x = (x / rect.width) * canvas.width - paddle.w / 2;
+      paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
       if (paddle.x < 0) paddle.x = 0;
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     });
 
-    // ===== 管理者モーダル（右上歯車） =====
+    // ===== 管理者モーダル =====
     function toggleAdminModal(force) {
       const modal = document.getElementById('admin-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -488,20 +385,15 @@
         setTimeout(() => document.getElementById('admin-token')?.focus(), 0);
       }
     }
-
-    // 背景クリックで閉じる
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('admin-modal');
       if (!modal || modal.style.display === 'none') return;
       if (e.target === modal) toggleAdminModal(false);
     });
-
-    // ESCで閉じる
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') toggleAdminModal(false);
     });
 
-    // ===== 管理者API（トークンはメモリにだけ保持） =====
     let ADMIN_SESSION_TOKEN = null;
 
     function adminSetMsg(msg) {
@@ -509,12 +401,28 @@
       if (el) el.textContent = msg || '';
     }
 
-    function adminLogin() {
+    // ★ログイン時にサーバーで検証してからログイン扱いにする
+    async function adminLogin() {
       const token = (document.getElementById('admin-token').value || '').trim();
       if (!token) { adminSetMsg('トークンを入力してね'); return; }
-      ADMIN_SESSION_TOKEN = token;
-      document.getElementById('admin-actions').style.display = 'block';
-      adminSetMsg('ログインOK（このタブを閉じるまで有効）');
+
+      adminSetMsg('確認中...');
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/check`, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const text = await res.text().catch(() => '');
+        if (!res.ok) {
+          adminSetMsg(`ログイン失敗: ${res.status} ${text}`);
+          return;
+        }
+        ADMIN_SESSION_TOKEN = token;
+        document.getElementById('admin-actions').style.display = 'block';
+        adminSetMsg('ログインOK');
+      } catch (e) {
+        adminSetMsg('通信エラー');
+      }
     }
 
     function adminLogout() {
@@ -542,7 +450,6 @@
       try { return JSON.parse(text); } catch { return text; }
     }
 
-    // 全削除（confirm=YES）
     async function adminClearAll() {
       const ok = confirm('本当に全データ削除しますか？（戻せません）');
       if (!ok) return;
@@ -555,7 +462,6 @@
       } catch (e) {}
     }
 
-    // 現在の保存名を削除
     async function adminClearName() {
       const saved = (localStorage.getItem('playerName') || '').trim().slice(0, 10);
       if (!saved) { adminSetMsg('削除する名前がありません（playerName未設定）'); return; }
