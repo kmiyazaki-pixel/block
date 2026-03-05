@@ -33,14 +33,18 @@ function requireAdmin(req, res, next) {
   console.log('AUTH header starts Bearer?', (req.headers.authorization || '').startsWith('Bearer '));
 
   const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
 
-  if (!process.env.ADMIN_TOKEN) {
+  const expected = (process.env.ADMIN_TOKEN || '').trim();
+
+  if (!expected) {
     console.error('❌ ADMIN_TOKEN is missing in env');
     return res.status(500).json({ error: 'server not configured' });
   }
 
-  if (token !== process.env.ADMIN_TOKEN) {
+  if (token !== expected) {
+    // どっちがズレてるか確認用（値は出さない）
+    console.log('token length=', token.length, 'expected length=', expected.length);
     return res.status(401).json({ error: 'unauthorized' });
   }
 
