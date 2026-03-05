@@ -19,6 +19,14 @@
       background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 25px;
       border-radius: 20px; width: 280px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
     }
+
+    /* ランキングが長くなるのでスクロール */
+    #rank-list{
+      max-height: 220px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+
     .rank-item { display: flex; justify-content: space-between; font-size: 16px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
     #name-input { width: 90%; padding: 12px; margin: 15px 0; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
 
@@ -315,7 +323,8 @@
       updateNameUI();
 
       try {
-        const res = await fetch(`${SERVER_URL}/api/ranking`);
+        // 公開ランキング：最大100件表示
+        const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
         const data = await res.json();
         rankList.innerHTML = '';
         data.forEach((s, i) => {
@@ -410,8 +419,7 @@
     }
     document.addEventListener('click', (e) => {
       const modal = document.getElementById('admin-modal');
-      if (!modal || modal.style.display === 'none') return;
-      if (e.target === modal) toggleAdminModal(false);
+      if (modal && modal.style.display !== 'none' && e.target === modal) toggleAdminModal(false);
 
       const modal2 = document.getElementById('admin-scores-modal');
       if (modal2 && modal2.style.display !== 'none' && e.target === modal2) toggleAdminScores(false);
