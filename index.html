@@ -156,9 +156,100 @@
       toastEl.textContent = msg;
       toastEl.style.display = 'block';
       clearTimeout(toastEl._t);
-      toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
+      toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1000);
     }
 
+    // ===== 爽快感：シェイク + パーティクル + SE + フラッシュ =====
+    let shakeTime = 0;
+    let shakePower = 0;
+
+    const particles = []; // {x,y,vx,vy,life}
+    const flashes = [];   // {x,y,w,h,life}
+
+    function addShake(p = 6, t = 10) {
+      shakePower = Math.max(shakePower, p);
+      shakeTime = Math.max(shakeTime, t);
+    }
+
+    function spawnParticles(x, y, n = 14) {
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 1 + Math.random() * 3.2;
+        particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 18 + Math.random() * 10 });
+      }
+    }
+
+    function spawnFlash(x, y, w, h) {
+      flashes.push({ x, y, w, h, life: 8 });
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.10;
+        p.life -= 1;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function updateFlashes() {
+      for (let i = flashes.length - 1; i >= 0; i--) {
+        flashes[i].life -= 1;
+        if (flashes[i].life <= 0) flashes.splice(i, 1);
+      }
+    }
+
+    function drawParticles() {
+      ctx.save();
+      for (const p of particles) {
+        const a = Math.max(0, p.life / 28);
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(p.x, p.y, 2, 2);
+      }
+      ctx.restore();
+    }
+
+    function drawFlashes() {
+      ctx.save();
+      for (const f of flashes) {
+        const a = Math.max(0, f.life / 8);
+        ctx.globalAlpha = a * 0.65;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(f.x, f.y, f.w, f.h);
+      }
+      ctx.restore();
+    }
+
+    // WebAudio（軽いピコ音）
+    let audioCtx = null;
+    function ensureAudio() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) {}
+    }
+    function beep(freq = 800, dur = 0.03, gain = 0.06) {
+      try {
+        ensureAudio();
+        if (!audioCtx) return;
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "square";
+        o.frequency.value = freq;
+        g.gain.value = gain;
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start();
+        o.stop(audioCtx.currentTime + dur);
+      } catch (e) {}
+    }
+    function buzz(ms = 10) {
+      if (navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    // ===== 状態 =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -175,9 +266,11 @@
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
+    // Paddle
     const paddleBaseW = 60;
     const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
+    // Ball
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
     const BALL_R_MIN = 10;
@@ -204,6 +297,7 @@
       syncBallRadius();
     }
 
+    // Blocks
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -230,6 +324,7 @@
       return true;
     }
 
+    // Powerups: WIDE / MULTI / PIERCE
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -256,11 +351,15 @@
         clearTimeout(wideTimer);
         paddle.w = Math.min(paddleBaseW * 1.8, 110);
         toast('POWER: WIDE');
+        addShake(2, 4);
+        beep(520, 0.02, 0.05);
         wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); }, WIDE_MS);
       }
 
       if (type === PowerType.MULTI) {
         toast('POWER: MULTI');
+        addShake(3, 6);
+        beep(680, 0.03, 0.06);
         const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
         balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
@@ -269,10 +368,13 @@
 
       if (type === PowerType.PIERCE) {
         toast('POWER: PIERCE');
+        addShake(3, 6);
+        beep(760, 0.03, 0.06);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
       }
     }
 
+    // ===== スコア/フィーバー =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -294,6 +396,8 @@
       feverActive = true;
       fever = 0;
       feverEndAt = performance.now() + FEVER_DURATION_MS;
+      addShake(5, 10);
+      beep(980, 0.05, 0.07);
       toast('FEVER x2!');
     }
 
@@ -301,10 +405,12 @@
       if (!feverActive) return;
       if (performance.now() >= feverEndAt) {
         feverActive = false;
+        beep(420, 0.04, 0.05);
         toast('FEVER END');
       }
     }
 
+    // ===== 描画 =====
     function drawPaddle() {
       ctx.fillStyle = paddle.color;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
@@ -363,6 +469,7 @@
       if (b.y < b.r) b.y = b.r;
     }
 
+    // ===== ブロック衝突（爽快：音程UP＋フラッシュ＋パーティクル） =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -372,16 +479,34 @@
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
               blk.status = 0;
+
+              // 反射（貫通中は反射しない）
               if (!pierceOn) b.dy = -b.dy;
 
+              // スコア/状態
               combo += 1;
               addFever(7);
               addScore(10);
 
-              maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
+              // エフェクト
+              const cx = blk.x + blockWidth/2;
+              const cy = blk.y + blockHeight/2;
+              spawnParticles(cx, cy, feverActive ? 22 : 14);
+              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+              addShake(feverActive ? 7 : 5, feverActive ? 10 : 8);
+
+              // コンボで音程アップ（爽快）
+              const base = feverActive ? 980 : 860;
+              const freq = Math.min(base + combo * 18, 1800);
+              beep(freq, feverActive ? 0.03 : 0.025, feverActive ? 0.075 : 0.06);
+              buzz(feverActive ? 10 : 6);
+
+              maybeDropPowerup(cx, cy);
 
               if (isAllCleared()) {
                 resetBlocks();
+                addShake(8, 12);
+                beep(1200, 0.06, 0.08);
                 toast('NEXT WAVE!');
               }
             }
@@ -415,11 +540,15 @@
       combo = 0;
       comboMul = 1.0;
 
+      addShake(7, 10);
+      beep(220, 0.06, 0.08);
+      buzz(16);
       toast(`MISS! LIFE ${lives}`);
 
       if (lives <= 0) endGame();
     }
 
+    // ===== 壁めり込み修正つき移動 =====
     function updateBalls() {
       updateFever();
 
@@ -429,19 +558,27 @@
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
 
+        // 左右
         if (nx > canvas.width - b.r) { b.dx = -Math.abs(b.dx); nx = canvas.width - b.r; }
         else if (nx < b.r) { b.dx = Math.abs(b.dx); nx = b.r; }
 
+        // 上
         if (ny < b.r) { b.dy = Math.abs(b.dy); ny = b.r; }
 
+        // パドル/落下
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
+            // パドルでコンボリセット
             combo = 0;
             comboMul = 1.0;
+
+            // ちょい演出（爽快）
+            addShake(2, 4);
+            beep(520, 0.02, 0.05);
 
             ny = paddle.y - b.r;
           } else if (b.y > canvas.height) {
@@ -460,14 +597,28 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
+    // ===== ループ =====
     function loop() {
       if (!running || isPaused || isGameOver) return;
 
+      // シェイク
+      ctx.save();
+      if (shakeTime > 0) {
+        const dx = (Math.random() * 2 - 1) * shakePower;
+        const dy = (Math.random() * 2 - 1) * shakePower;
+        ctx.translate(dx, dy);
+        shakeTime -= 1;
+        shakePower *= 0.9;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // フィーバー中の脈動（第2段）
       if (feverActive) {
+        const t = performance.now() * 0.012;
+        const a = 0.06 + (Math.sin(t) * 0.5 + 0.5) * 0.08; // 0.06〜0.14
         ctx.save();
-        ctx.fillStyle = "rgba(255,0,127,0.03)";
+        ctx.fillStyle = `rgba(255,0,127,${a})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
       }
@@ -480,9 +631,18 @@
       updatePowerups();
       updateBalls();
 
+      // エフェクト更新/描画
+      updateParticles();
+      updateFlashes();
+      drawFlashes();
+      drawParticles();
+
+      ctx.restore();
+
       requestAnimationFrame(loop);
     }
 
+    // ===== UI =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -492,13 +652,19 @@
     }
 
     function startGame() {
+      ensureAudio();
+
       score = 0;
       lives = 2;
       combo = 0;
       comboMul = 1.0;
       fever = 0;
       feverActive = false;
+
       powerups.length = 0;
+      particles.length = 0;
+      flashes.length = 0;
+
       initBlocks();
 
       paddle.w = paddleBaseW;
@@ -562,10 +728,16 @@
     function markTutorialSeen() { localStorage.setItem('tutorialSeen', '1'); }
 
     function onStartPressed() {
+      ensureAudio();
+      // クリック音（気持ちよさ）
+      beep(660, 0.03, 0.06);
+
       if (shouldShowTutorial()) showPanel(tutorialPanel);
       else { showPanel(null); startGame(); }
     }
     tutorialOkBtn.addEventListener('click', () => {
+      ensureAudio();
+      beep(720, 0.03, 0.06);
       markTutorialSeen();
       showPanel(null);
       startGame();
@@ -593,7 +765,7 @@
       showPanel(startPanel);
     }
 
-    // 操作：PCは押してる間 / スマホはこすってる間
+    // ===== 操作：PCは押してる間 / スマホはこすってる間 =====
     let isMouseDown = false;
 
     function movePaddleByClientX(clientX) {
@@ -614,6 +786,7 @@
     }, { passive: false });
 
     touchArea.addEventListener('mousedown', (e) => {
+      ensureAudio();
       isMouseDown = true;
       movePaddleByClientX(e.clientX);
     });
@@ -626,6 +799,7 @@
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
+    // 初期
     showPanel(startPanel);
   </script>
 </body>
