@@ -12,7 +12,7 @@
     .score-display { font-size: 22px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
     .hud {
-      width: min(420px, 92vw);
+      width: min(520px, 94vw);
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px 12px;
@@ -53,32 +53,36 @@
     }
     .fever-tag.on { display:inline-flex; }
 
-    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
-    canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
+    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; padding: 0 8px; box-sizing: border-box; }
 
-    /* ランキングUI */
+    /* ★ 画面いっぱいに広げる */
+    canvas {
+      width: 100%;
+      height: auto;
+      background: #000;
+      border: 3px solid var(--neon-blue);
+      box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+      border-radius: 8px;
+      display:block;
+    }
+
     #ranking-board {
       display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 22px;
       border-radius: 20px; width: 300px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
     }
-    #rank-list{
-      max-height: 240px;
-      overflow: auto;
-      padding-right: 6px;
-    }
+    #rank-list{ max-height: 240px; overflow: auto; padding-right: 6px; }
     .rank-item { display: flex; justify-content: space-between; font-size: 15px; margin: 8px 0; border-bottom: 1px solid #222; padding-bottom: 4px; }
     #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
 
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    #open-ranking-btn { max-width: 320px; width: min(320px, 92vw); }
+    #open-ranking-btn { max-width: 360px; width: min(360px, 92vw); }
 
     .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
-    .touch-area { width: min(600px, 92%); height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+    .touch-area { width: 96%; height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
-    /* 右上の歯車ボタン */
     #admin-gear{
       position: fixed; top: 14px; right: 14px;
       width: 44px; height: 44px; border-radius: 14px;
@@ -88,7 +92,6 @@
       z-index: 2000; backdrop-filter: blur(10px);
     }
 
-    /* 管理者モーダル */
     .admin-modal-backdrop{
       position: fixed; inset: 0;
       background: rgba(0,0,0,0.6);
@@ -103,10 +106,7 @@
       padding: 16px;
       backdrop-filter: blur(10px);
     }
-    .admin-modal-header{
-      display:flex; align-items:center; justify-content:space-between;
-      margin-bottom: 10px;
-    }
+    .admin-modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
     .admin-title{ font-size: 18px; color: #ff007f; }
     .admin-close{ border: none; background: transparent; color: #fff; font-size: 18px; cursor: pointer; }
     .admin-section{ margin-top: 12px; }
@@ -167,8 +167,7 @@
   </div>
 
   <div id="game-container">
-    <!-- 横幅拡大 -->
-    <canvas id="gameCanvas" width="360" height="480"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
     <div id="ranking-board">
       <h2 style="color:var(--neon-pink); margin-top: 0;" id="rank-title">GAME OVER</h2>
@@ -280,15 +279,48 @@
     let isGameOver = false;
     let pausedByRanking = false;
 
-    // パドル（キャンバス高さに合わせて位置調整）
-    const paddleBaseW = 60;
-    const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 30, w: paddleBaseW, h: 10, color: '#00d2ff' };
+    // ==== 画面いっぱいCanvasにする（内部解像度も合わせる） ====
+    function resizeCanvas() {
+      const container = document.getElementById('game-container');
+      const padding = 16; // container左右paddingぶん
+      const cssW = Math.max(280, Math.floor(container.clientWidth)); // 横いっぱい
+      // 高さは縦方向に余裕を持たせて「見やすい比率」にする
+      // スマホ縦で長すぎるの防止で、viewport高さからざっくり計算
+      const maxH = Math.floor(window.innerHeight * 0.55);
+      const cssH = Math.max(380, Math.min(520, maxH));
 
-    // ボール（最初20 → スコアで4まで縮む）
+      // devicePixelRatio対応
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // 描画座標をCSSピクセルに合わせる
+    }
+
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      // リサイズでパドル/ボールが場外に出ないよう補正
+      paddle.y = canvas.height / (window.devicePixelRatio || 1) - 30;
+      clampPaddle();
+    });
+
+    // パドル
+    const paddleBaseW = 70;
+    const paddle = { x: 0, y: 0, w: paddleBaseW, h: 10, color: '#00d2ff' };
+
+    function clampPaddle() {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      if (paddle.x < 0) paddle.x = 0;
+      if (paddle.x > w - paddle.w) paddle.x = w - paddle.w;
+    }
+
+    // ボール
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
     const BALL_R_MIN = 4;
-    const BALL_SHRINK_PER_SCORE = 250; // 250点で半径1減（調整OK）
+    const BALL_SHRINK_PER_SCORE = 250;
 
     function calcBallRadius() {
       const shrink = Math.floor(score / BALL_SHRINK_PER_SCORE);
@@ -299,7 +331,7 @@
       return { x, y, dx, dy, r: BALL_R_MAX, pierceUntil: 0 };
     }
 
-    let balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
+    let balls = [];
 
     function syncBallRadius() {
       const r = calcBallRadius();
@@ -308,18 +340,20 @@
     }
 
     function resetToSingleBall() {
-      balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+      balls = [ makeBall(w/2, h*0.55, baseBallSpeed, -baseBallSpeed) ];
       syncBallRadius();
     }
 
-    // ブロック（横に広げて数増やす：8×6）
+    // ブロック（8×6）※幅に合わせて自動で詰める
     const blockRowCount = 6;
     const blockColumnCount = 8;
-    const blockWidth = 38;
     const blockHeight = 16;
-    const blockPadding = 4;
-    const blockOffsetTop = 48;
-    const blockOffsetLeft = 10;
+    const blockPadding = 5;
+    const blockOffsetTop = 56;
+    const blockMarginX = 10;
+    let blockWidth = 38; // 後で計算で上書き
 
     let blocks = [];
     function initBlocks() {
@@ -330,6 +364,13 @@
       }
     }
     initBlocks();
+
+    function recalcBlockWidth() {
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const usable = w - blockMarginX * 2;
+      blockWidth = Math.floor((usable - (blockColumnCount - 1) * blockPadding) / blockColumnCount);
+      blockWidth = Math.max(24, blockWidth);
+    }
 
     // パワーアップ（WIDE / MULTI / PIERCE）
     const powerups = [];
@@ -364,14 +405,14 @@
 
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
-        paddle.w = Math.min(paddleBaseW * 1.8, 120);
+        paddle.w = Math.min(paddleBaseW * 1.8, 140);
         toast('POWER: WIDE');
-        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; }, WIDE_MS);
+        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); }, WIDE_MS);
       }
 
       if (type === PowerType.MULTI) {
         toast('POWER: MULTI');
-        const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
+        const b = balls[0] || makeBall(100, 100, baseBallSpeed, -baseBallSpeed);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
         balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
         syncBallRadius();
@@ -396,53 +437,6 @@
       }
     }
     updateNameUI();
-
-    function drawBall(b) {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-      const pierceOn = performance.now() < b.pierceUntil;
-      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    function drawPaddle() {
-      ctx.fillStyle = paddle.color;
-      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-    }
-
-    function drawBlocks() {
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) {
-          if(blocks[c][r].status === 1) {
-            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
-            blocks[c][r].x = bx;
-            blocks[c][r].y = by;
-            ctx.fillStyle = `hsl(${r * 35}, 70%, 50%)`;
-            ctx.fillRect(bx, by, blockWidth, blockHeight);
-          }
-        }
-      }
-    }
-
-    function drawPowerups() {
-      powerups.forEach(p => {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 9, 0, Math.PI*2);
-        ctx.fillStyle = "rgba(255,255,255,0.12)";
-        ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.25)";
-        ctx.stroke();
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px Arial Black";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(powerLabel(p.type), p.x, p.y + 0.5);
-        ctx.restore();
-      });
-    }
 
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
@@ -517,6 +511,53 @@
       }
     }
 
+    function drawBlocks() {
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) {
+          if(blocks[c][r].status === 1) {
+            const bx = blockMarginX + c * (blockWidth + blockPadding);
+            const by = blockOffsetTop + r * (blockHeight + blockPadding);
+            blocks[c][r].x = bx;
+            blocks[c][r].y = by;
+            ctx.fillStyle = `hsl(${r * 35}, 70%, 50%)`;
+            ctx.fillRect(bx, by, blockWidth, blockHeight);
+          }
+        }
+      }
+    }
+
+    function drawPowerups() {
+      powerups.forEach(p => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 9, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.25)";
+        ctx.stroke();
+        ctx.fillStyle = "#fff";
+        ctx.font = "10px Arial Black";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(powerLabel(p.type), p.x, p.y + 0.5);
+        ctx.restore();
+      });
+    }
+
+    function drawBall(b) {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      const pierceOn = performance.now() < b.pierceUntil;
+      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function drawPaddle() {
+      ctx.fillStyle = paddle.color;
+      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+    }
+
     function updatePowerups() {
       for (let i = powerups.length - 1; i >= 0; i--) {
         const p = powerups[i];
@@ -529,7 +570,7 @@
           powerups.splice(i, 1);
           continue;
         }
-        if (p.y > canvas.height + 20) powerups.splice(i, 1);
+        if (p.y > (canvas.height/(window.devicePixelRatio||1)) + 20) powerups.splice(i, 1);
       }
     }
 
@@ -538,7 +579,7 @@
       lifeEl.innerText = lives;
 
       resetToSingleBall();
-      paddle.x = (canvas.width - paddle.w) / 2;
+      paddle.x = (canvas.width/(window.devicePixelRatio||1) - paddle.w) / 2;
 
       combo = 0;
       comboMul = 1.0;
@@ -558,10 +599,13 @@
       ballsEl.innerText = String(balls.length);
       syncBallRadius();
 
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        if (b.x + b.dx > canvas.width - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
+        if (b.x + b.dx > w - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
         if (b.y + b.dy < b.r) b.dy = -b.dy;
 
         if (b.y + b.dy > paddle.y - b.r) {
@@ -573,7 +617,7 @@
             combo = 0;
             comboMul = 1.0;
             comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
-          } else if (b.y > canvas.height) {
+          } else if (b.y > h) {
             balls.splice(i, 1);
             continue;
           }
@@ -591,12 +635,15 @@
     function draw() {
       if (isGameOver) return;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      const h = canvas.height / (window.devicePixelRatio || 1);
+
+      ctx.clearRect(0, 0, w, h);
 
       if (feverActive) {
         ctx.save();
         ctx.fillStyle = "rgba(255,0,127,0.03)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillRect(0, 0, w, h);
         ctx.restore();
       }
 
@@ -684,21 +731,22 @@
 
     // 操作
     const touchArea = document.getElementById('touch-control');
+    function movePaddleByClientX(clientX) {
+      const rect = touchArea.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const ratio = x / rect.width;
+      const w = canvas.width / (window.devicePixelRatio || 1);
+      paddle.x = ratio * w - paddle.w/2;
+      clampPaddle();
+    }
+
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
-      const rect = touchArea.getBoundingClientRect();
-      const touchX = e.touches[0].clientX - rect.left;
-      paddle.x = (touchX / rect.width) * canvas.width - paddle.w/2;
-      if(paddle.x < 0) paddle.x = 0;
-      if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+      movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
 
     touchArea.addEventListener('mousemove', (e) => {
-      const rect = touchArea.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      paddle.x = (x / rect.width) * canvas.width - paddle.w/2;
-      if(paddle.x < 0) paddle.x = 0;
-      if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
+      movePaddleByClientX(e.clientX);
     });
 
     // HUD初期
@@ -710,9 +758,8 @@
       syncBallRadius();
       feverFillEl.style.width = `${fever}%`;
     }
-    refreshHUD();
 
-    // ===== 管理者UI（そのまま：省略せず実装を維持） =====
+    // ===== 管理者UI（そのまま・省略） =====
     function toggleAdminModal(force) {
       const modal = document.getElementById('admin-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -885,8 +932,17 @@
       }
     }
 
-    // スタート
-    syncBallRadius();
+    // ==== 初期化して開始 ====
+    resizeCanvas();
+    recalcBlockWidth();
+
+    const w = canvas.width / (window.devicePixelRatio || 1);
+    const h = canvas.height / (window.devicePixelRatio || 1);
+    paddle.x = (w - paddle.w) / 2;
+    paddle.y = h - 30;
+
+    resetToSingleBall();
+    refreshHUD();
     requestAnimationFrame(draw);
   </script>
 </body>
