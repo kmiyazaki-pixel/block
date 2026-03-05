@@ -81,7 +81,6 @@
   <div id="game-container">
     <canvas id="gameCanvas" width="300" height="400"></canvas>
 
-    <!-- START -->
     <div id="start-panel" class="panel">
       <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
       <div class="sub">Tap START to play</div>
@@ -89,19 +88,18 @@
       <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10</div>
     </div>
 
-    <!-- Tutorial -->
     <div id="tutorial-panel" class="panel">
       <h2 style="color:#fff;">HOW TO PLAY</h2>
       <div class="tip">
         ・下のエリアをドラッグしてパドル移動<br>
-        ・ブロック連続破壊でCOMBO（スコアUP）<br>
+        ・硬いブロックは2回で割れる（割れた時が最高）<br>
+        ・連続破壊でCOMBO（スコアUP）<br>
         ・FEVERでスコア2倍（一定数壊すと発動）<br>
         ・落ちてくる W/M/P はパワーアップ
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
 
-    <!-- Pause -->
     <div id="pause-panel" class="panel">
       <h2 style="color:#fff;">PAUSED</h2>
       <div class="sub">Tap resume to continue</div>
@@ -109,7 +107,6 @@
       <button class="menu-btn" id="restart-btn">RESTART</button>
     </div>
 
-    <!-- Game Over + Input（ランキング一覧は出さない） -->
     <div id="ranking-panel" class="panel">
       <h2 style="color:var(--neon-pink);">GAME OVER</h2>
       <div class="sub">Your score: <span id="final-score">0</span></div>
@@ -171,10 +168,10 @@
       shakeTime = Math.max(shakeTime, t);
     }
 
-    function spawnParticles(x, y, n = 14) {
+    function spawnParticles(x, y, n = 14, force = 1.0) {
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
-        const s = 1 + Math.random() * 3.2;
+        const s = (1 + Math.random() * 3.2) * force;
         particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 18 + Math.random() * 10 });
       }
     }
@@ -223,7 +220,7 @@
       ctx.restore();
     }
 
-    // WebAudio（軽いピコ音）
+    // WebAudio
     let audioCtx = null;
     function ensureAudio() {
       try {
@@ -297,7 +294,7 @@
       syncBallRadius();
     }
 
-    // Blocks
+    // Blocks with HP (1 or 2)
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -311,20 +308,31 @@
       blocks = [];
       for(let c=0; c<blockColumnCount; c++) {
         blocks[c] = [];
-        for(let r=0; r<blockRowCount; r++) blocks[c][r] = { x: 0, y: 0, status: 1 };
+        for(let r=0; r<blockRowCount; r++) {
+          const hard = Math.random() < 0.22; // ★ 22%を硬さ2に
+          const hp = hard ? 2 : 1;
+          blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
+        }
       }
     }
     initBlocks();
 
     function resetBlocks() {
-      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
+      for(let c=0; c<blockColumnCount; c++) {
+        for(let r=0; r<blockRowCount; r++) {
+          const hard = Math.random() < 0.22;
+          blocks[c][r].hp = hard ? 2 : 1;
+          blocks[c][r].status = 1;
+        }
+      }
     }
+
     function isAllCleared() {
       for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
       return true;
     }
 
-    // Powerups: WIDE / MULTI / PIERCE
+    // Powerups
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -374,7 +382,7 @@
       }
     }
 
-    // ===== スコア/フィーバー =====
+    // ===== Scoring =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -382,7 +390,6 @@
 
       score += add;
       scoreEl.innerText = score;
-
       syncBallRadius();
     }
 
@@ -397,7 +404,7 @@
       fever = 0;
       feverEndAt = performance.now() + FEVER_DURATION_MS;
       addShake(5, 10);
-      beep(980, 0.05, 0.07);
+      beep(980, 0.05, 0.08); // ★ フィーバー開始は音量UP
       toast('FEVER x2!');
     }
 
@@ -405,12 +412,12 @@
       if (!feverActive) return;
       if (performance.now() >= feverEndAt) {
         feverActive = false;
-        beep(420, 0.04, 0.05);
+        beep(420, 0.04, 0.055);
         toast('FEVER END');
       }
     }
 
-    // ===== 描画 =====
+    // ===== Draw =====
     function drawPaddle() {
       ctx.fillStyle = paddle.color;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
@@ -428,13 +435,24 @@
     function drawBlocks() {
       for(let c=0; c<blockColumnCount; c++) {
         for(let r=0; r<blockRowCount; r++) {
-          if(blocks[c][r].status === 1) {
+          const blk = blocks[c][r];
+          if(blk.status === 1) {
             const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
             const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
-            blocks[c][r].x = bx;
-            blocks[c][r].y = by;
-            ctx.fillStyle = `hsl(${r * 35}, 70%, 50%)`;
-            ctx.fillRect(bx, by, blockWidth, blockHeight);
+            blk.x = bx;
+            blk.y = by;
+
+            // 色：硬いほど濃い + 枠
+            const baseHue = r * 35;
+            if (blk.hp === 2) {
+              ctx.fillStyle = `hsl(${baseHue}, 85%, 38%)`;
+              ctx.fillRect(bx, by, blockWidth, blockHeight);
+              ctx.strokeStyle = "rgba(255,255,255,0.35)";
+              ctx.strokeRect(bx + 0.5, by + 0.5, blockWidth - 1, blockHeight - 1);
+            } else {
+              ctx.fillStyle = `hsl(${baseHue}, 70%, 50%)`;
+              ctx.fillRect(bx, by, blockWidth, blockHeight);
+            }
           }
         }
       }
@@ -469,7 +487,7 @@
       if (b.y < b.r) b.y = b.r;
     }
 
-    // ===== ブロック衝突（爽快：音程UP＋フラッシュ＋パーティクル） =====
+    // ===== Collision with HP =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -478,36 +496,60 @@
           const blk = blocks[c][r];
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-              blk.status = 0;
+
+              // ヒットしたらhp減らす
+              blk.hp -= 1;
 
               // 反射（貫通中は反射しない）
               if (!pierceOn) b.dy = -b.dy;
 
-              // スコア/状態
-              combo += 1;
-              addFever(7);
-              addScore(10);
-
-              // エフェクト
               const cx = blk.x + blockWidth/2;
               const cy = blk.y + blockHeight/2;
-              spawnParticles(cx, cy, feverActive ? 22 : 14);
-              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-              addShake(feverActive ? 7 : 5, feverActive ? 10 : 8);
 
-              // コンボで音程アップ（爽快）
-              const base = feverActive ? 980 : 860;
-              const freq = Math.min(base + combo * 18, 1800);
-              beep(freq, feverActive ? 0.03 : 0.025, feverActive ? 0.075 : 0.06);
-              buzz(feverActive ? 10 : 6);
+              // ★ まだ割れてない（hp残り1）：軽い演出
+              if (blk.hp >= 1) {
+                spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+                spawnParticles(cx, cy, feverActive ? 18 : 10, feverActive ? 1.25 : 1.0);
+                addShake(3, 5);
 
-              maybeDropPowerup(cx, cy);
+                // 音：低め
+                const base = feverActive ? 900 : 780;
+                const freq = Math.min(base + combo * 12, 1500);
+                beep(freq, 0.02, feverActive ? 0.085 : 0.06);
+                buzz(6);
 
-              if (isAllCleared()) {
-                resetBlocks();
-                addShake(8, 12);
-                beep(1200, 0.06, 0.08);
-                toast('NEXT WAVE!');
+                // スコア/ゲージは入れる（硬いのも気持ちよく）
+                combo += 1;
+                addFever(6);
+                addScore(8);
+              }
+
+              // ★ 割れた（hp==0）：強演出
+              if (blk.hp <= 0) {
+                blk.status = 0;
+
+                combo += 1;
+                addFever(8);
+                addScore(12);
+
+                spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+                spawnParticles(cx, cy, feverActive ? 34 : 22, feverActive ? 1.6 : 1.25);
+                addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
+
+                // 音：高く＋音量UP
+                const base2 = feverActive ? 1200 : 980;
+                const freq2 = Math.min(base2 + combo * 18, 2000);
+                beep(freq2, 0.03, feverActive ? 0.11 : 0.08);
+                buzz(feverActive ? 14 : 10);
+
+                maybeDropPowerup(cx, cy);
+
+                if (isAllCleared()) {
+                  resetBlocks();
+                  addShake(10, 14);
+                  beep(1300, 0.06, 0.11);
+                  toast('NEXT WAVE!');
+                }
               }
             }
           }
@@ -541,14 +583,13 @@
       comboMul = 1.0;
 
       addShake(7, 10);
-      beep(220, 0.06, 0.08);
+      beep(220, 0.06, 0.09);
       buzz(16);
       toast(`MISS! LIFE ${lives}`);
 
       if (lives <= 0) endGame();
     }
 
-    // ===== 壁めり込み修正つき移動 =====
     function updateBalls() {
       updateFever();
 
@@ -558,25 +599,20 @@
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
 
-        // 左右
         if (nx > canvas.width - b.r) { b.dx = -Math.abs(b.dx); nx = canvas.width - b.r; }
         else if (nx < b.r) { b.dx = Math.abs(b.dx); nx = b.r; }
 
-        // 上
         if (ny < b.r) { b.dy = Math.abs(b.dy); ny = b.r; }
 
-        // パドル/落下
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
-            // パドルでコンボリセット
             combo = 0;
             comboMul = 1.0;
 
-            // ちょい演出（爽快）
             addShake(2, 4);
             beep(520, 0.02, 0.05);
 
@@ -597,11 +633,10 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
-    // ===== ループ =====
+    // ===== Loop =====
     function loop() {
       if (!running || isPaused || isGameOver) return;
 
-      // シェイク
       ctx.save();
       if (shakeTime > 0) {
         const dx = (Math.random() * 2 - 1) * shakePower;
@@ -613,10 +648,10 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // フィーバー中の脈動（第2段）
+      // ★ フィーバー中：背景脈動を少し強め
       if (feverActive) {
         const t = performance.now() * 0.012;
-        const a = 0.06 + (Math.sin(t) * 0.5 + 0.5) * 0.08; // 0.06〜0.14
+        const a = 0.08 + (Math.sin(t) * 0.5 + 0.5) * 0.12; // 0.08〜0.20
         ctx.save();
         ctx.fillStyle = `rgba(255,0,127,${a})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -631,7 +666,6 @@
       updatePowerups();
       updateBalls();
 
-      // エフェクト更新/描画
       updateParticles();
       updateFlashes();
       drawFlashes();
@@ -688,7 +722,7 @@
       isGameOver = true;
       pauseBtn.style.display = 'none';
 
-      finalScoreEl.innerText = String(score);
+      document.getElementById('final-score').innerText = String(score);
       showPanel(rankingPanel);
 
       const savedName = localStorage.getItem('playerName');
@@ -729,9 +763,7 @@
 
     function onStartPressed() {
       ensureAudio();
-      // クリック音（気持ちよさ）
       beep(660, 0.03, 0.06);
-
       if (shouldShowTutorial()) showPanel(tutorialPanel);
       else { showPanel(null); startGame(); }
     }
@@ -761,11 +793,10 @@
       submitBtn.disabled = false;
       submitBtn.textContent = 'SUBMIT';
 
-      // 送信後：STARTへ
       showPanel(startPanel);
     }
 
-    // ===== 操作：PCは押してる間 / スマホはこすってる間 =====
+    // 操作
     let isMouseDown = false;
 
     function movePaddleByClientX(clientX) {
@@ -799,7 +830,6 @@
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
-    // 初期
     showPanel(startPanel);
   </script>
 </body>
