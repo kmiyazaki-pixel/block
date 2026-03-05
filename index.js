@@ -1,5 +1,4 @@
-// index.js（管理者削除API入り 完成版 / Render向け）
-// ※ デバッグログ（Authorizationが届いてるか）入り：原因切り分け用
+// index.js（Render向け：ランキング + 管理者削除 + ログイン検証）
 require('dotenv').config();
 
 const express = require('express');
@@ -12,7 +11,6 @@ dns.setDefaultResultOrder('ipv4first');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS: GitHub Pages からのアクセスを許可（必要なら自分のURLに変更）
 app.use(cors({
   origin: ['https://kmiyazaki-pixel.github.io'],
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
@@ -27,40 +25,29 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 
 // --- 管理者認証（Bearerトークン）---
 function requireAdmin(req, res, next) {
-  // デバッグ（トークン文字列そのものは出さない）
-  console.log('ADMIN_TOKEN set?', !!process.env.ADMIN_TOKEN);
-  console.log('AUTH header present?', !!req.headers.authorization);
-  console.log('AUTH header starts Bearer?', (req.headers.authorization || '').startsWith('Bearer '));
-
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
-
   const expected = (process.env.ADMIN_TOKEN || '').trim();
 
   if (!expected) {
-    console.error('❌ ADMIN_TOKEN is missing in env');
     return res.status(500).json({ error: 'server not configured' });
   }
-
   if (token !== expected) {
-    // どっちがズレてるか確認用（値は出さない）
-    console.log('token length=', token.length, 'expected length=', expected.length);
     return res.status(401).json({ error: 'unauthorized' });
   }
-
   next();
 }
 
+// --- 管理者ログイン検証（これがOKならログイン成功扱いにする）---
+app.get('/api/admin/check', requireAdmin, (req, res) => {
+  res.json({ ok: true });
+});
+
 // --- MongoDB接続 ---
 const MONGO_URL = process.env.MONGO_URL;
-if (!MONGO_URL) {
-  console.error('❌ MONGO_URL is missing in environment variables');
-}
+if (!MONGO_URL) console.error('❌ MONGO_URL is missing');
 
-mongoose.connect(MONGO_URL, {
-  serverSelectionTimeoutMS: 15000,
-  family: 4,
-})
+mongoose.connect(MONGO_URL, { serverSelectionTimeoutMS: 15000, family: 4 })
   .then(() => console.log('✅ MongoDB connected'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
@@ -70,7 +57,6 @@ const scoreSchema = new mongoose.Schema({
   score: { type: Number, required: true },
   date: { type: Date, default: Date.now }
 });
-
 const Score = mongoose.model('Score', scoreSchema);
 
 // --- API: ranking ---
@@ -79,7 +65,6 @@ app.get('/api/ranking', async (req, res) => {
     const topScores = await Score.find()
       .sort({ score: -1, date: 1 })
       .limit(5);
-
     res.json(topScores);
   } catch (err) {
     console.error('❌ /api/ranking error:', err);
