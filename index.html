@@ -12,7 +12,7 @@
     .score-display { font-size: 22px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
     .hud {
-      width: min(360px, 92vw);
+      width: min(420px, 92vw);
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px 12px;
@@ -60,10 +60,10 @@
     #ranking-board {
       display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(5, 5, 20, 0.95); border: 2px solid var(--neon-pink); padding: 22px;
-      border-radius: 20px; width: 290px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+      border-radius: 20px; width: 300px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
     }
     #rank-list{
-      max-height: 220px;
+      max-height: 240px;
       overflow: auto;
       padding-right: 6px;
     }
@@ -73,10 +73,10 @@
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
 
-    #open-ranking-btn { max-width: 300px; width: min(300px, 92vw); }
+    #open-ranking-btn { max-width: 320px; width: min(320px, 92vw); }
 
     .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
-    .touch-area { width: min(520px, 90%); height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
+    .touch-area { width: min(600px, 92%); height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
     /* 右上の歯車ボタン */
     #admin-gear{
@@ -129,7 +129,6 @@
     .admin-msg{ margin-top: 8px; font-size: 12px; color: #bbb; min-height: 1em; }
     .admin-hint{ margin-top: 8px; font-size: 12px; color: #777; }
 
-    /* 小さな通知 */
     .toast {
       position:absolute;
       bottom: 12px;
@@ -152,10 +151,10 @@
     <div class="score-display">SCORE: <span id="score">0</span></div>
 
     <div class="hud">
-      <div class="hud-item"><span class="hud-label">LIFE</span><span class="hud-value" id="life">3</span></div>
+      <div class="hud-item"><span class="hud-label">LIFE</span><span class="hud-value" id="life">2</span></div>
       <div class="hud-item"><span class="hud-label">COMBO</span><span class="hud-value" id="combo">x1.0</span></div>
       <div class="hud-item"><span class="hud-label">MULTI</span><span class="hud-value" id="balls">1</span></div>
-      <div class="hud-item"><span class="hud-label">BALL</span><span class="hud-value" id="ballsize">10</span></div>
+      <div class="hud-item"><span class="hud-label">BALL</span><span class="hud-value" id="ballsize">20</span></div>
 
       <div class="fever-wrap">
         <span class="hud-label">FEVER</span>
@@ -168,13 +167,14 @@
   </div>
 
   <div id="game-container">
-    <canvas id="gameCanvas" width="300" height="400"></canvas>
+    <!-- 横幅拡大 -->
+    <canvas id="gameCanvas" width="360" height="480"></canvas>
 
     <div id="ranking-board">
       <h2 style="color:var(--neon-pink); margin-top: 0;" id="rank-title">GAME OVER</h2>
       <div id="rank-list"></div>
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-      <button class="menu-btn" id="submit-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
+      <button class="menu-btn" onclick="submitScore()">SUBMIT & REPLAY</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="closeRanking()">CLOSE</button>
       <button class="menu-btn" style="margin-top:10px;" onclick="changeName()">CHANGE NAME</button>
     </div>
@@ -237,14 +237,11 @@
   </div>
 
   <script>
-    // ====== サーバー ======
     const SERVER_URL = 'https://block-r057.onrender.com';
 
-    // ====== Canvas ======
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
-    // HUD
     const scoreEl = document.getElementById('score');
     const lifeEl = document.getElementById('life');
     const comboEl = document.getElementById('combo');
@@ -261,44 +258,37 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
     }
 
-    // UI
     const rankingBoard = document.getElementById('ranking-board');
     const rankList = document.getElementById('rank-list');
     const nameInput = document.getElementById('name-input');
     const openRankingBtn = document.getElementById('open-ranking-btn');
     const rankTitleEl = document.getElementById('rank-title');
 
-    // ====== ライフ制 ======
-    let lives = 3;
-    const MAX_LIVES = 3;
+    // LIFE=2
+    let lives = 2;
 
-    // ====== スコア/コンボ ======
     let score = 0;
     let combo = 0;
     let comboMul = 1.0;
 
-    // ====== フィーバー ======
     let fever = 0;
     let feverActive = false;
     let feverEndAt = 0;
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
-    // ====== ゲーム状態 ======
     let isGameOver = false;
     let pausedByRanking = false;
 
-    // ====== パドル ======
-    const paddleBaseW = 50;
-    const paddle = { x: 125, y: 370, w: paddleBaseW, h: 10, color: '#00d2ff' };
+    // パドル（キャンバス高さに合わせて位置調整）
+    const paddleBaseW = 60;
+    const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 30, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // ====== ボール（サイズ可変） ======
-    const baseBallSpeed = 3.1;
-
-    // ボールサイズ：最初大きく、スコアが増えると小さく
-    const BALL_R_MAX = 10;  // 最初
-    const BALL_R_MIN = 4;   // 最小
-    const BALL_SHRINK_PER_SCORE = 300; // 300点で半径1減（調整OK）
+    // ボール（最初20 → スコアで4まで縮む）
+    const baseBallSpeed = 3.2;
+    const BALL_R_MAX = 20;
+    const BALL_R_MIN = 4;
+    const BALL_SHRINK_PER_SCORE = 250; // 250点で半径1減（調整OK）
 
     function calcBallRadius() {
       const shrink = Math.floor(score / BALL_SHRINK_PER_SCORE);
@@ -309,7 +299,7 @@
       return { x, y, dx, dy, r: BALL_R_MAX, pierceUntil: 0 };
     }
 
-    let balls = [ makeBall(150, 200, baseBallSpeed, -baseBallSpeed) ];
+    let balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
 
     function syncBallRadius() {
       const r = calcBallRadius();
@@ -322,14 +312,15 @@
       syncBallRadius();
     }
 
-    // ====== ブロック ======
-    const blockRowCount = 5;
-    const blockColumnCount = 6;
-    const blockWidth = 40;
-    const blockHeight = 15;
-    const blockPadding = 5;
-    const blockOffsetTop = 40;
-    const blockOffsetLeft = 15;
+    // ブロック（横に広げて数増やす：8×6）
+    const blockRowCount = 6;
+    const blockColumnCount = 8;
+    const blockWidth = 38;
+    const blockHeight = 16;
+    const blockPadding = 4;
+    const blockOffsetTop = 48;
+    const blockOffsetLeft = 10;
+
     let blocks = [];
     function initBlocks() {
       blocks = [];
@@ -340,26 +331,20 @@
     }
     initBlocks();
 
-    // ====== パワーアップ（SLOW削除版） ======
-    const powerups = []; // {x,y,vy,type}
+    // パワーアップ（WIDE / MULTI / PIERCE）
+    const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
 
-    const PowerType = {
-      WIDE: 'WIDE',
-      MULTI: 'MULTI',
-      PIERCE: 'PIERCE',
-    };
+    const PowerType = { WIDE:'WIDE', MULTI:'MULTI', PIERCE:'PIERCE' };
 
     function maybeDropPowerup(x, y) {
       if (Math.random() > POWER_CHANCE) return;
-
       const roll = Math.random();
       let type = PowerType.WIDE;
       if (roll < 0.50) type = PowerType.WIDE;
       else if (roll < 0.80) type = PowerType.MULTI;
       else type = PowerType.PIERCE;
-
       powerups.push({ x, y, vy: POWER_VY, type });
     }
 
@@ -379,11 +364,9 @@
 
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
-        paddle.w = Math.min(paddleBaseW * 1.8, 95);
+        paddle.w = Math.min(paddleBaseW * 1.8, 120);
         toast('POWER: WIDE');
-        wideTimer = setTimeout(() => {
-          paddle.w = paddleBaseW;
-        }, WIDE_MS);
+        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; }, WIDE_MS);
       }
 
       if (type === PowerType.MULTI) {
@@ -400,7 +383,6 @@
       }
     }
 
-    // ====== 名前入力（初回だけ） ======
     function updateNameUI() {
       const saved = localStorage.getItem('playerName');
       const hasName = !!(saved && saved.trim());
@@ -415,7 +397,6 @@
     }
     updateNameUI();
 
-    // ====== 描画 ======
     function drawBall(b) {
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
@@ -434,11 +415,11 @@
       for(let c=0; c<blockColumnCount; c++) {
         for(let r=0; r<blockRowCount; r++) {
           if(blocks[c][r].status === 1) {
-            let bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-            let by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
+            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
+            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
             blocks[c][r].x = bx;
             blocks[c][r].y = by;
-            ctx.fillStyle = `hsl(${r * 40}, 70%, 50%)`;
+            ctx.fillStyle = `hsl(${r * 35}, 70%, 50%)`;
             ctx.fillRect(bx, by, blockWidth, blockHeight);
           }
         }
@@ -463,7 +444,6 @@
       });
     }
 
-    // ====== スコア/フィーバー ======
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -473,7 +453,6 @@
       scoreEl.innerText = score;
       comboEl.innerText = `x${(comboMul * feverMul).toFixed(1)}`;
 
-      // スコアに応じてボールサイズ更新
       syncBallRadius();
     }
 
@@ -502,20 +481,28 @@
       }
     }
 
-    // ====== 衝突（ボール） ======
+    function isAllCleared() {
+      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
+      return true;
+    }
+
+    function resetBlocks() {
+      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
+    }
+
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
       for(let c=0; c<blockColumnCount; c++) {
         for(let r=0; r<blockRowCount; r++) {
-          let blk = blocks[c][r];
+          const blk = blocks[c][r];
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
               blk.status = 0;
               if (!pierceOn) b.dy = -b.dy;
 
               combo += 1;
-              addFever(8);
+              addFever(7);
               addScore(10);
 
               maybeDropPowerup(blk.x + blockWidth/2, blk.y + blockHeight/2);
@@ -530,16 +517,6 @@
       }
     }
 
-    function isAllCleared() {
-      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
-      return true;
-    }
-
-    function resetBlocks() {
-      for(let c=0; c<blockColumnCount; c++) for(let r=0; r<blockRowCount; r++) blocks[c][r].status = 1;
-    }
-
-    // ====== パワーアップ更新 ======
     function updatePowerups() {
       for (let i = powerups.length - 1; i >= 0; i--) {
         const p = powerups[i];
@@ -556,7 +533,6 @@
       }
     }
 
-    // ====== ミス（ライフ） ======
     function loseLife() {
       lives -= 1;
       lifeEl.innerText = lives;
@@ -576,7 +552,6 @@
       }
     }
 
-    // ====== ボール更新 ======
     function updateBalls() {
       updateFever();
 
@@ -586,23 +561,18 @@
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        const dx = b.dx;
-        const dy = b.dy;
+        if (b.x + b.dx > canvas.width - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
+        if (b.y + b.dy < b.r) b.dy = -b.dy;
 
-        if (b.x + dx > canvas.width - b.r || b.x + dx < b.r) b.dx = -b.dx;
-        if (b.y + dy < b.r) b.dy = -b.dy;
-
-        if (b.y + dy > paddle.y - b.r) {
+        if (b.y + b.dy > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
-
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
             combo = 0;
             comboMul = 1.0;
             comboEl.innerText = feverActive ? `x${FEVER_MULT.toFixed(1)}` : 'x1.0';
-
           } else if (b.y > canvas.height) {
             balls.splice(i, 1);
             continue;
@@ -618,7 +588,6 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
-    // ====== ループ ======
     function draw() {
       if (isGameOver) return;
 
@@ -642,7 +611,6 @@
       requestAnimationFrame(draw);
     }
 
-    // ====== ランキング表示 ======
     async function showRanking(isGameOverMode) {
       rankTitleEl.textContent = isGameOverMode ? "GAME OVER" : "RANKING";
       rankingBoard.style.display = 'block';
@@ -668,7 +636,6 @@
       }
     }
 
-    // ====== 送信 ======
     async function submitScore() {
       let saved = localStorage.getItem('playerName');
       let name = (saved && saved.trim()) ? saved.trim() : (nameInput.value || "PLAYER").trim();
@@ -690,7 +657,6 @@
       location.reload();
     }
 
-    // ランキングボタン（停止して表示）
     openRankingBtn.addEventListener('click', () => {
       pausedByRanking = true;
       isGameOver = true;
@@ -716,7 +682,7 @@
       nameInput.focus();
     }
 
-    // ====== 操作 ======
+    // 操作
     const touchArea = document.getElementById('touch-control');
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
@@ -735,7 +701,7 @@
       if(paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
     });
 
-    // ====== HUD初期 ======
+    // HUD初期
     function refreshHUD() {
       scoreEl.innerText = score;
       lifeEl.innerText = lives;
@@ -746,7 +712,7 @@
     }
     refreshHUD();
 
-    // ====== 管理者UI（そのまま） ======
+    // ===== 管理者UI（そのまま：省略せず実装を維持） =====
     function toggleAdminModal(force) {
       const modal = document.getElementById('admin-modal');
       const show = (typeof force === 'boolean') ? force : (modal.style.display === 'none');
@@ -919,7 +885,7 @@
       }
     }
 
-    // ====== スタート ======
+    // スタート
     syncBallRadius();
     requestAnimationFrame(draw);
   </script>
