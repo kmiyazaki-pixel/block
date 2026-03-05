@@ -30,18 +30,20 @@
 
     #start-panel { display: block; border-color: rgba(0,210,255,0.35); }
 
-    #ranking-panel { border-color: rgba(255,0,127,0.55); }
-    #rank-list{ max-height: 220px; overflow: auto; padding-right: 6px; text-align:left; }
-    .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; }
-    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
-
-    .toast {
-      position:absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
-      padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
+    #tutorial-panel{ border-color: rgba(255,255,255,0.2); }
+    .tip{
+      text-align:left;
+      font-size: 12px;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.5;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 10px;
+      margin: 10px 0 14px;
     }
 
-    /* Pause button */
+    /* Pause */
     #pause-btn{
       position: absolute;
       top: 8px;
@@ -54,36 +56,78 @@
       cursor: pointer;
       font-weight: 900;
       letter-spacing: 1px;
-      display: none; /* ゲーム中だけ表示 */
+      display: none;
       user-select: none;
     }
-    #pause-btn:hover{
-      border-color: rgba(0,210,255,0.6);
-      box-shadow: 0 0 10px rgba(0,210,255,0.25);
-    }
-
-    /* Pause overlay */
-    #pause-panel{
-      display:none;
-      border-color: rgba(255,255,255,0.18);
-    }
+    #pause-panel{ border-color: rgba(255,255,255,0.18); }
     #pause-panel .menu-btn{ margin-top: 10px; }
 
-    /* Tutorial (one-time) */
-    #tutorial-panel{
+    /* Game Over (入力) */
+    #ranking-panel { border-color: rgba(255,0,127,0.55); }
+    #rank-list{ max-height: 220px; overflow: auto; padding-right: 6px; text-align:left; }
+    .rank-item { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; }
+    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
+
+    /* ★ 送信後のフルスクリーンランキング */
+    #ranking-fullscreen{
       display:none;
-      border-color: rgba(255,255,255,0.2);
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 20, 0.98);
+      z-index: 5000;
+      padding: 18px 14px;
+      box-sizing: border-box;
     }
-    .tip{
-      text-align:left;
+    .rf-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .rf-title{
+      font-size: 18px;
+      color: var(--neon-pink);
+      letter-spacing: 1px;
+    }
+    .rf-sub{
       font-size: 12px;
-      color: rgba(255,255,255,0.78);
-      line-height: 1.5;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 10px;
-      margin: 10px 0 14px;
+      color: rgba(255,255,255,0.65);
+      margin-top: 2px;
+    }
+    .rf-btn{
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 2px solid var(--neon-green);
+      background: transparent;
+      color: var(--neon-green);
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .rf-btn:hover{ background: var(--neon-green); color:#000; }
+
+    .rf-list{
+      margin-top: 12px;
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .rf-item{
+      display:flex;
+      justify-content:space-between;
+      padding: 10px 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      font-size: 14px;
+    }
+    .rf-item:last-child{ border-bottom: none; }
+
+    .toast {
+      position:absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
     }
   </style>
 </head>
@@ -125,7 +169,7 @@
       <button class="menu-btn" id="restart-btn">RESTART</button>
     </div>
 
-    <!-- Game Over + Ranking -->
+    <!-- Game Over + Input -->
     <div id="ranking-panel" class="panel">
       <h2 style="color:var(--neon-pink);">GAME OVER</h2>
       <div class="sub">Your score: <span id="final-score">0</span></div>
@@ -133,10 +177,22 @@
       <div id="rank-list"></div>
 
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-      <button class="menu-btn" id="submit-btn">SUBMIT & REPLAY</button>
+      <button class="menu-btn" id="submit-btn">SUBMIT</button>
     </div>
 
     <div class="toast" id="toast"></div>
+  </div>
+
+  <!-- ★ フルスクリーンランキング -->
+  <div id="ranking-fullscreen">
+    <div class="rf-head">
+      <div>
+        <div class="rf-title">RANKING</div>
+        <div class="rf-sub">Top 100</div>
+      </div>
+      <button class="rf-btn" id="play-again-btn">PLAY AGAIN</button>
+    </div>
+    <div class="rf-list" id="rf-list"></div>
   </div>
 
   <div class="controls">
@@ -170,6 +226,10 @@
     const nameInput = document.getElementById('name-input');
     const submitBtn = document.getElementById('submit-btn');
 
+    const fullscreen = document.getElementById('ranking-fullscreen');
+    const rfList = document.getElementById('rf-list');
+    const playAgainBtn = document.getElementById('play-again-btn');
+
     const touchArea = document.getElementById('touch-control');
 
     function toast(msg) {
@@ -179,7 +239,7 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
     }
 
-    // ===== ゲーム状態 =====
+    // ===== 状態 =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -202,10 +262,10 @@
     const paddleBaseW = 60;
     const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
-    // Ball size: 20 -> half (10) minimum
+    // Ball size: 20 -> 10 minimum
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
-    const BALL_R_MIN = 10;          // ★ half size minimum
+    const BALL_R_MIN = 10;
     const BALL_SHRINK_PER_SCORE = 250;
 
     function calcBallRadius() {
@@ -383,6 +443,14 @@
       });
     }
 
+    // ===== 壁めり込み修正：反射後に位置を押し戻す =====
+    function clampBallInside(b) {
+      if (b.x < b.r) b.x = b.r;
+      if (b.x > canvas.width - b.r) b.x = canvas.width - b.r;
+      if (b.y < b.r) b.y = b.r;
+      // 下方向は落下判定があるのでここではクランプしない
+    }
+
     // ===== 衝突 =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
@@ -452,26 +520,49 @@
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
-        if (b.x + b.dx > canvas.width - b.r || b.x + b.dx < b.r) b.dx = -b.dx;
-        if (b.y + b.dy < b.r) b.dy = -b.dy;
+        // 次フレーム位置
+        let nx = b.x + b.dx;
+        let ny = b.y + b.dy;
 
-        if (b.y + b.dy > paddle.y - b.r) {
+        // 左右壁
+        if (nx > canvas.width - b.r) {
+          b.dx = -Math.abs(b.dx);
+          nx = canvas.width - b.r; // ★押し戻し
+        } else if (nx < b.r) {
+          b.dx = Math.abs(b.dx);
+          nx = b.r; // ★押し戻し
+        }
+
+        // 上壁
+        if (ny < b.r) {
+          b.dy = Math.abs(b.dy);
+          ny = b.r; // ★押し戻し
+        }
+
+        // パドル/落下
+        if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
             b.dy = -Math.abs(b.dy);
+
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             b.dx = hitPos * 4;
 
-            // パドルでコンボリセット
             combo = 0;
             comboMul = 1.0;
+
+            // 反射後の位置補正
+            ny = paddle.y - b.r;
           } else if (b.y > canvas.height) {
             balls.splice(i, 1);
             continue;
           }
         }
 
-        b.x += b.dx;
-        b.y += b.dy;
+        // 移動確定
+        b.x = nx;
+        b.y = ny;
+
+        clampBallInside(b); // 念のため
 
         collisionDetectionForBall(b);
       }
@@ -502,7 +593,7 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== 画面遷移 =====
+    // ===== UI切替 =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -511,8 +602,36 @@
       if (panelEl) panelEl.style.display = 'block';
     }
 
+    function showFullscreenRanking() {
+      fullscreen.style.display = 'block';
+    }
+    function hideFullscreenRanking() {
+      fullscreen.style.display = 'none';
+    }
+
+    async function renderFullscreenRanking() {
+      rfList.innerHTML = '<div class="rf-item"><span>Loading...</span><span></span></div>';
+      try {
+        const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
+        const data = await res.json();
+        rfList.innerHTML = '';
+        data.forEach((s, i) => {
+          const row = document.createElement('div');
+          row.className = 'rf-item';
+          const left = document.createElement('span');
+          left.textContent = `${i + 1}. ${s.name}`;
+          const right = document.createElement('span');
+          right.textContent = String(s.score);
+          row.append(left, right);
+          rfList.appendChild(row);
+        });
+      } catch (e) {
+        rfList.innerHTML = '<div class="rf-item"><span>RANKING OFFLINE</span><span></span></div>';
+      }
+    }
+
+    // ===== Start / End =====
     function startGame() {
-      // 初期化
       score = 0;
       lives = 2;
       combo = 0;
@@ -546,13 +665,11 @@
       finalScoreEl.innerText = String(score);
       showPanel(rankingPanel);
 
-      // 前回名前復元
       const savedName = localStorage.getItem('playerName');
       if (savedName) nameInput.value = savedName;
 
-      // ランキング取得
       try {
-        const res = await fetch(`${SERVER_URL}/api/ranking?limit=100`);
+        const res = await fetch(`${SERVER_URL}/api/ranking?limit=20`);
         const data = await res.json();
         rankList.innerHTML = '';
         data.forEach((s, i) => {
@@ -577,7 +694,6 @@
       pauseBtn.textContent = '▶';
       showPanel(pausePanel);
     }
-
     function resumeGame() {
       if (!running || isGameOver) return;
       isPaused = false;
@@ -585,9 +701,7 @@
       showPanel(null);
       requestAnimationFrame(loop);
     }
-
     function restartFromPause() {
-      // START画面に戻す（やり直し）
       running = false;
       isPaused = false;
       isGameOver = false;
@@ -600,39 +714,33 @@
       if (isPaused) resumeGame();
       else pauseGame();
     });
-
     resumeBtn.addEventListener('click', resumeGame);
     restartBtn.addEventListener('click', restartFromPause);
 
-    // ===== Tutorial (one-time) =====
+    // ===== Tutorial =====
     function shouldShowTutorial() {
       return localStorage.getItem('tutorialSeen') !== '1';
     }
-
     function markTutorialSeen() {
       localStorage.setItem('tutorialSeen', '1');
     }
-
     function onStartPressed() {
-      // 初回だけチュートリアル
-      if (shouldShowTutorial()) {
-        showPanel(tutorialPanel);
-      } else {
-        showPanel(null);
-        startGame();
-      }
+      if (shouldShowTutorial()) showPanel(tutorialPanel);
+      else { showPanel(null); startGame(); }
     }
-
     tutorialOkBtn.addEventListener('click', () => {
       markTutorialSeen();
       showPanel(null);
       startGame();
     });
 
-    // ===== Submit =====
+    // ===== Submit => Fullscreen Ranking =====
     async function submitScore() {
       const name = (nameInput.value || 'PLAYER').trim().slice(0, 10) || 'PLAYER';
       localStorage.setItem('playerName', name);
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'SENDING...';
 
       try {
         await fetch(`${SERVER_URL}/api/save-score`, {
@@ -642,9 +750,20 @@
         });
       } catch (e) {}
 
-      // リプレイへ
-      showPanel(startPanel);
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'SUBMIT';
+
+      // ★ 送信後：入力モーダルを閉じて、全画面ランキングへ
+      showPanel(null);
+      rankingPanel.style.display = 'none';
+      await renderFullscreenRanking();
+      showFullscreenRanking();
     }
+
+    playAgainBtn.addEventListener('click', () => {
+      hideFullscreenRanking();
+      showPanel(startPanel);
+    });
 
     // ===== 操作 =====
     function movePaddleByClientX(clientX) {
@@ -654,22 +773,21 @@
       paddle.x = ratio * canvas.width - paddle.w/2;
       clampPaddle();
     }
-
     touchArea.addEventListener('touchmove', (e) => {
       e.preventDefault();
       movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
-
     touchArea.addEventListener('mousemove', (e) => {
       movePaddleByClientX(e.clientX);
     });
 
-    // ===== Bind buttons =====
+    // ===== Bind =====
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
-    // 初期：STARTだけ
+    // 初期
     showPanel(startPanel);
+    hideFullscreenRanking();
   </script>
 </body>
 </html>
