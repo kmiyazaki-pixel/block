@@ -9,78 +9,99 @@
       --neon-blue: #00d2ff;
       --neon-pink: #ff007f;
       --neon-green: #0f0;
-      --glass: rgba(255, 255, 255, 0.05);
     }
 
     * { box-sizing: border-box; }
 
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
-      background: #05050a;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(0,210,255,0.12), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(255,0,127,0.12), transparent 26%),
+        linear-gradient(180deg, #05050a 0%, #080b16 48%, #05050a 100%);
       color: #fff;
       font-family: 'Arial Black', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      height: 100vh;
       margin: 0;
       overflow: hidden;
       touch-action: none;
     }
 
     .header {
-      margin-top: 18px;
+      margin-top: 14px;
       text-align: center;
       position: relative;
       width: 100%;
       max-width: 420px;
+      z-index: 2;
+      flex: 0 0 auto;
     }
 
     .score-display {
-      font-size: 24px;
+      font-size: 26px;
       color: var(--neon-blue);
-      text-shadow: 0 0 10px var(--neon-blue);
+      text-shadow:
+        0 0 8px rgba(0,210,255,0.85),
+        0 0 20px rgba(0,210,255,0.35);
     }
 
     .status-line {
       margin-top: 8px;
       font-size: 12px;
-      color: rgba(255,255,255,0.75);
+      color: rgba(255,255,255,0.78);
       letter-spacing: 0.6px;
-      min-height: 16px;
-      display:flex;
-      justify-content:center;
-      gap:10px;
+      min-height: 18px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
       flex-wrap: wrap;
+      padding: 0 10px;
     }
 
     .badge {
-      padding: 3px 8px;
+      padding: 4px 9px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
     }
 
     .badge.on {
-      border-color: rgba(0,210,255,0.6);
-      box-shadow: 0 0 10px rgba(0,210,255,0.18);
+      border-color: rgba(0,210,255,0.62);
+      box-shadow:
+        0 0 14px rgba(0,210,255,0.22),
+        inset 0 1px 0 rgba(255,255,255,0.12);
       color: #fff;
     }
 
     #game-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
       width: 100%;
-      flex-grow: 1;
+      flex: 1 1 auto;
+      display: flex;
+      align-items: center;
       justify-content: center;
       position: relative;
+      min-height: 0;
+      padding: 8px 0 12px;
     }
 
     canvas {
+      display: block;
+      width: 300px;
+      height: auto;
+      border-radius: 14px;
+      border: 3px solid rgba(0,210,255,0.85);
       background: #000;
-      border: 3px solid var(--neon-blue);
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
-      border-radius: 8px;
+      box-shadow:
+        0 0 18px rgba(0,210,255,0.28),
+        0 0 34px rgba(0,210,255,0.12),
+        inset 0 0 24px rgba(255,255,255,0.04);
     }
 
     .menu-btn {
@@ -92,13 +113,14 @@
       border-radius: 50px;
       font-weight: bold;
       cursor: pointer;
-      transition: 0.25s;
+      transition: 0.22s;
       font-family: inherit;
     }
 
     .menu-btn:hover {
-      background: var(--neon-green);
-      color: #000;
+      background: rgba(0,255,0,0.14);
+      color: #fff;
+      box-shadow: 0 0 18px rgba(0,255,0,0.18);
     }
 
     .menu-btn.secondary {
@@ -107,36 +129,42 @@
     }
 
     .menu-btn.secondary:hover {
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.1);
       color: #fff;
+      box-shadow: 0 0 14px rgba(255,255,255,0.09);
     }
 
     .menu-btn.danger {
-      color: #ff7f9f;
+      color: #ff9dbb;
       border-color: rgba(255,0,127,0.45);
     }
 
     .menu-btn.danger:hover {
-      background: rgba(255,0,127,0.18);
+      background: rgba(255,0,127,0.16);
       color: #fff;
+      box-shadow: 0 0 18px rgba(255,0,127,0.16);
     }
 
     .panel {
       display: none;
       position: absolute;
-      top: 45%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: rgba(5, 5, 20, 0.95);
-      border: 2px solid rgba(255,255,255,0.12);
-      padding: 22px;
-      border-radius: 18px;
       width: 290px;
+      max-height: 82vh;
+      overflow-y: auto;
+      padding: 22px;
       text-align: center;
       z-index: 1000;
-      backdrop-filter: blur(10px);
-      max-height: 78vh;
-      overflow-y: auto;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(18,22,38,0.95), rgba(8,8,22,0.96));
+      border: 1px solid rgba(255,255,255,0.16);
+      backdrop-filter: blur(12px);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.04) inset,
+        0 20px 50px rgba(0,0,0,0.45);
     }
 
     .panel h2 {
@@ -147,22 +175,18 @@
 
     .sub {
       font-size: 12px;
-      color: rgba(255,255,255,0.65);
+      color: rgba(255,255,255,0.66);
       margin: 6px 0 14px;
     }
 
-    #start-panel { display: block; border-color: rgba(0,210,255,0.35); }
-    #tutorial-panel { border-color: rgba(255,255,255,0.2); }
-    #pause-panel { border-color: rgba(255,255,255,0.18); }
-    #ranking-panel { border-color: rgba(255,0,127,0.55); }
-    #admin-login-panel,
-    #admin-panel { border-color: rgba(255,255,255,0.24); }
+    #start-panel { display: block; border-color: rgba(0,210,255,0.32); }
+    #ranking-panel { border-color: rgba(255,0,127,0.4); }
 
     .tip {
-      text-align:left;
+      text-align: left;
       font-size: 12px;
-      color: rgba(255,255,255,0.78);
-      line-height: 1.5;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.55;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 12px;
@@ -177,43 +201,43 @@
       padding: 8px 10px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.06);
+      background: rgba(255,255,255,0.07);
       color: #fff;
       cursor: pointer;
       font-weight: 900;
       letter-spacing: 1px;
       display: none;
       user-select: none;
+      box-shadow: 0 0 12px rgba(255,255,255,0.08);
     }
-
-    #pause-panel .menu-btn { margin-top: 10px; }
 
     #name-input,
     #admin-token-input {
       width: 90%;
       padding: 12px;
       margin: 14px 0 10px;
-      background: #111;
-      border: 1px solid var(--neon-blue);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(0,210,255,0.7);
       color: #fff;
       text-align: center;
       font-family: inherit;
       border-radius: 10px;
+      outline: none;
     }
 
     .toast {
-      position:absolute;
+      position: absolute;
       bottom: 12px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(0,0,0,0.75);
+      background: rgba(0,0,0,0.78);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 8px 12px;
       border-radius: 999px;
       font-size: 12px;
-      color:#fff;
+      color: #fff;
       z-index: 1200;
-      display:none;
+      display: none;
       max-width: 90vw;
       text-align: center;
       white-space: nowrap;
@@ -221,7 +245,7 @@
       text-overflow: ellipsis;
     }
 
-    .controls { display:none; }
+    .controls { display: none; }
 
     .ranking-box {
       margin-top: 14px;
@@ -230,6 +254,7 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       text-align: left;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     .ranking-title {
@@ -238,6 +263,7 @@
       color: var(--neon-pink);
       margin-bottom: 8px;
       letter-spacing: 0.8px;
+      text-shadow: 0 0 10px rgba(255,0,127,0.28);
     }
 
     .ranking-list {
@@ -255,7 +281,7 @@
       font-size: 12px;
       padding: 6px 8px;
       border-radius: 10px;
-      background: rgba(255,255,255,0.04);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
     }
 
     .rank-num {
@@ -272,6 +298,7 @@
 
     .rank-score {
       color: var(--neon-blue);
+      text-shadow: 0 0 8px rgba(0,210,255,0.2);
     }
 
     .empty-note {
@@ -281,11 +308,12 @@
       padding: 16px 0;
     }
 
-    .start-actions {
+    .start-actions,
+    .admin-actions,
+    .admin-top-actions {
       display: flex;
       flex-direction: column;
       gap: 10px;
-      margin-top: 10px;
     }
 
     .admin-list {
@@ -358,30 +386,16 @@
       background: rgba(255,255,255,0.08);
     }
 
-    .admin-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .admin-top-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
     @media (max-height: 760px) {
       .panel {
-        top: 50%;
-        max-height: 82vh;
+        max-height: 86vh;
       }
     }
   </style>
 </head>
 <body>
 
-  <div class="header">
+  <div class="header" id="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
 
     <div class="status-line" id="status-line">
@@ -394,7 +408,7 @@
   </div>
 
   <div id="game-container">
-    <canvas id="gameCanvas" width="300" height="400"></canvas>
+    <canvas id="gameCanvas" width="300" height="560"></canvas>
 
     <div id="start-panel" class="panel">
       <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
@@ -406,7 +420,7 @@
         <button class="menu-btn secondary" id="open-admin-btn">ADMIN</button>
       </div>
 
-      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10</div>
+      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10 / WAVEごとに少し高速化</div>
 
       <div class="ranking-box">
         <div class="ranking-title">TOP 5 RANKING</div>
@@ -420,10 +434,11 @@
       <h2 style="color:#fff;">HOW TO PLAY</h2>
       <div class="tip">
         ・画面どこをこすっても操作できる（PCは押しながら）<br>
-        ・硬いブロックは2回で割れる（割れた時が最高）<br>
-        ・同じ場所ばかり壊すと得点が下がる（ハメ対策）<br>
-        ・FEVERでスコア2倍（一定数壊すと発動）<br>
-        ・W/M/P はパワーアップ（上に状態が出る）
+        ・ブロック数が増えて長く気持ちよく遊べる<br>
+        ・全消しごとに少しずつスピードUP<br>
+        ・硬いブロックは2回で破壊<br>
+        ・同じ場所ばかり壊すと得点が下がる<br>
+        ・FEVER中は演出とスコア倍率が強化
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -432,7 +447,7 @@
       <h2 style="color:#fff;">PAUSED</h2>
       <div class="sub">Tap resume to continue</div>
       <button class="menu-btn" id="resume-btn">RESUME</button>
-      <button class="menu-btn" id="restart-btn">RESTART</button>
+      <button class="menu-btn" id="restart-btn" style="margin-top:10px;">RESTART</button>
     </div>
 
     <div id="ranking-panel" class="panel">
@@ -464,7 +479,7 @@
         <div class="empty-note">Loading...</div>
       </div>
 
-      <div class="admin-actions">
+      <div class="admin-actions" style="margin-top:12px;">
         <button class="menu-btn secondary" id="admin-logout-btn">LOGOUT</button>
         <button class="menu-btn secondary" id="admin-back-btn">BACK TO START</button>
       </div>
@@ -483,6 +498,7 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    const headerEl = document.getElementById('header');
     const scoreEl = document.getElementById('score');
     const toastEl = document.getElementById('toast');
 
@@ -543,35 +559,6 @@
       return `${y}/${m}/${day} ${hh}:${mm}`;
     }
 
-    // ===== ランキング表示 =====
-    async function fetchRanking() {
-      rankingListEl.innerHTML = '<div class="empty-note">Loading...</div>';
-
-      try {
-        const res = await fetch(`${SERVER_URL}/api/ranking`, { cache: 'no-store' });
-        const list = await res.json();
-
-        if (!Array.isArray(list) || list.length === 0) {
-          rankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
-          return;
-        }
-
-        rankingListEl.innerHTML = list.map((item, idx) => {
-          const name = String(item.name || 'PLAYER');
-          const score = Number(item.score || 0);
-          return `
-            <div class="rank-row">
-              <div class="rank-num">${idx + 1}</div>
-              <div class="rank-name">${escapeHtml(name)}</div>
-              <div class="rank-score">${score}</div>
-            </div>
-          `;
-        }).join('');
-      } catch (e) {
-        rankingListEl.innerHTML = '<div class="empty-note">取得失敗</div>';
-      }
-    }
-
     function escapeHtml(str) {
       return String(str)
         .replaceAll('&', '&amp;')
@@ -581,14 +568,31 @@
         .replaceAll("'", '&#39;');
     }
 
-    // ===== 管理機能 =====
-    function getAdminHeaders() {
-      return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${adminToken}`
-      };
+    // ===== ランキング =====
+    async function fetchRanking() {
+      rankingListEl.innerHTML = '<div class="empty-note">Loading...</div>';
+      try {
+        const res = await fetch(`${SERVER_URL}/api/ranking`, { cache: 'no-store' });
+        const list = await res.json();
+
+        if (!Array.isArray(list) || list.length === 0) {
+          rankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
+          return;
+        }
+
+        rankingListEl.innerHTML = list.map((item, idx) => `
+          <div class="rank-row">
+            <div class="rank-num">${idx + 1}</div>
+            <div class="rank-name">${escapeHtml(item.name || 'PLAYER')}</div>
+            <div class="rank-score">${Number(item.score || 0)}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        rankingListEl.innerHTML = '<div class="empty-note">取得失敗</div>';
+      }
     }
 
+    // ===== 管理機能 =====
     async function adminCheckLogin() {
       if (!adminToken) return false;
       try {
@@ -668,16 +672,13 @@
 
         adminListEl.innerHTML = list.map(item => {
           const id = String(item._id || '');
-          const name = escapeHtml(item.name || 'PLAYER');
-          const score = Number(item.score || 0);
-          const date = formatDate(item.date);
           return `
             <div class="admin-row">
               <div class="admin-main">
-                <div class="admin-name">${name}</div>
-                <div class="admin-score">${score}</div>
+                <div class="admin-name">${escapeHtml(item.name || 'PLAYER')}</div>
+                <div class="admin-score">${Number(item.score || 0)}</div>
               </div>
-              <div class="admin-meta">ID: ${escapeHtml(id)}<br>DATE: ${escapeHtml(date)}</div>
+              <div class="admin-meta">ID: ${escapeHtml(id)}<br>DATE: ${escapeHtml(formatDate(item.date))}</div>
               <div class="small-btn-row">
                 <button class="small-btn delete" data-delete-id="${escapeHtml(id)}">DELETE</button>
               </div>
@@ -691,8 +692,7 @@
 
     async function deleteAdminScore(id) {
       if (!id) return;
-      const ok = confirm('この1件を削除しますか？');
-      if (!ok) return;
+      if (!confirm('この1件を削除しますか？')) return;
 
       try {
         const res = await fetch(`${SERVER_URL}/api/admin/score/${encodeURIComponent(id)}`, {
@@ -720,8 +720,7 @@
     }
 
     async function deleteAllScores() {
-      const ok = confirm('本当に全件削除しますか？');
-      if (!ok) return;
+      if (!confirm('本当に全件削除しますか？')) return;
 
       try {
         const res = await fetch(`${SERVER_URL}/api/admin/scores?confirm=YES`, {
@@ -755,59 +754,59 @@
       showPanel(startPanel);
     }
 
-    // ===== ループ稼ぎ減衰 =====
-    const hitHistory = [];
-    const LOOP_WINDOW_MS = 1200;
-    const SAME_COL_THRESHOLD = 3;
-    const TOTAL_HITS_THRESHOLD = 6;
-
-    function loopPenaltyMultiplier(colIndex) {
-      const now = performance.now();
-
-      while (hitHistory.length && now - hitHistory[0].t > LOOP_WINDOW_MS) {
-        hitHistory.shift();
-      }
-
-      const total = hitHistory.length;
-      const sameCol = hitHistory.filter(h => h.c === colIndex).length;
-
-      let mul = 1.0;
-
-      if (sameCol >= SAME_COL_THRESHOLD) mul *= 0.65;
-      if (sameCol >= SAME_COL_THRESHOLD + 1) mul *= 0.75;
-
-      if (total >= TOTAL_HITS_THRESHOLD) mul *= 0.7;
-      if (total >= TOTAL_HITS_THRESHOLD + 2) mul *= 0.7;
-
-      mul = Math.max(0.35, mul);
-
-      hitHistory.push({ t: now, c: colIndex });
-
-      return mul;
-    }
-
     // ===== エフェクト =====
     let shakeTime = 0;
     let shakePower = 0;
-
     const particles = [];
     const flashes = [];
+    const sparkles = [];
+    const stars = [];
+
+    function initStars() {
+      stars.length = 0;
+      for (let i = 0; i < 34; i++) {
+        stars.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          r: 0.7 + Math.random() * 1.8,
+          a: 0.15 + Math.random() * 0.5,
+          tw: Math.random() * Math.PI * 2
+        });
+      }
+    }
 
     function addShake(p = 6, t = 10) {
       shakePower = Math.max(shakePower, p);
       shakeTime = Math.max(shakeTime, t);
     }
 
-    function spawnParticles(x, y, n = 14, force = 1.0) {
+    function spawnParticles(x, y, n = 14, force = 1.0, colorMode = 'white') {
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
-        const s = (1 + Math.random() * 3.2) * force;
-        particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 18 + Math.random() * 10 });
+        const s = (1 + Math.random() * 3.4) * force;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s,
+          life: 18 + Math.random() * 14,
+          mode: colorMode
+        });
       }
     }
 
     function spawnFlash(x, y, w, h) {
       flashes.push({ x, y, w, h, life: 8 });
+    }
+
+    function spawnSparkle(x, y, n = 8) {
+      for (let i = 0; i < n; i++) {
+        sparkles.push({
+          x: x + (Math.random() * 22 - 11),
+          y: y + (Math.random() * 22 - 11),
+          life: 10 + Math.random() * 12,
+          r: 1 + Math.random() * 2
+        });
+      }
     }
 
     function updateParticles() {
@@ -828,13 +827,22 @@
       }
     }
 
+    function updateSparkles() {
+      for (let i = sparkles.length - 1; i >= 0; i--) {
+        sparkles[i].life -= 1;
+        if (sparkles[i].life <= 0) sparkles.splice(i, 1);
+      }
+    }
+
     function drawParticles() {
       ctx.save();
       for (const p of particles) {
-        const a = Math.max(0, p.life / 28);
+        const a = Math.max(0, p.life / 30);
         ctx.globalAlpha = a;
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(p.x, p.y, 2, 2);
+        if (p.mode === 'pink') ctx.fillStyle = '#ff66aa';
+        else if (p.mode === 'blue') ctx.fillStyle = '#66e6ff';
+        else ctx.fillStyle = '#fff';
+        ctx.fillRect(p.x, p.y, 2.4, 2.4);
       }
       ctx.restore();
     }
@@ -843,9 +851,25 @@
       ctx.save();
       for (const f of flashes) {
         const a = Math.max(0, f.life / 8);
-        ctx.globalAlpha = a * 0.65;
-        ctx.fillStyle = "#fff";
+        ctx.globalAlpha = a * 0.55;
+        const grd = ctx.createLinearGradient(f.x, f.y, f.x, f.y + f.h);
+        grd.addColorStop(0, 'rgba(255,255,255,0.9)');
+        grd.addColorStop(1, 'rgba(255,255,255,0.1)');
+        ctx.fillStyle = grd;
         ctx.fillRect(f.x, f.y, f.w, f.h);
+      }
+      ctx.restore();
+    }
+
+    function drawSparkles() {
+      ctx.save();
+      for (const s of sparkles) {
+        const a = Math.max(0, s.life / 20);
+        ctx.globalAlpha = a * 0.8;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.restore();
     }
@@ -879,13 +903,12 @@
       if (navigator.vibrate) navigator.vibrate(ms);
     }
 
-    // ===== 状態 =====
+    // ===== ゲーム状態 =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
 
     let lives = 2;
-
     let score = 0;
     let combo = 0;
     let comboMul = 1.0;
@@ -899,10 +922,14 @@
     let wideUntil = 0;
     let pierceUntil = 0;
 
+    let wave = 1;
+    let waveSpeedBonus = 0;
+    const WAVE_SPEED_STEP = 0.22;
+
     const paddleBaseW = 60;
     const paddle = {
-      x: (canvas.width - paddleBaseW)/2,
-      y: canvas.height - 25,
+      x: 0,
+      y: 0,
       w: paddleBaseW,
       h: 10,
       color: '#00d2ff'
@@ -918,8 +945,22 @@
       return Math.max(BALL_R_MIN, BALL_R_MAX - shrink);
     }
 
+    function getTargetBallSpeed() {
+      return Math.min(6.2, baseBallSpeed + waveSpeedBonus);
+    }
+
+    function normalizeVelocity(dx, dy, speed) {
+      const len = Math.hypot(dx, dy) || 1;
+      return {
+        dx: (dx / len) * speed,
+        dy: (dy / len) * speed
+      };
+    }
+
     function makeBall(x, y, dx, dy) {
-      return { x, y, dx, dy, r: BALL_R_MAX, pierceUntil: 0 };
+      const speed = getTargetBallSpeed();
+      const v = normalizeVelocity(dx, dy, speed);
+      return { x, y, dx: v.dx, dy: v.dy, r: BALL_R_MAX, pierceUntil: 0, trail: [] };
     }
 
     let balls = [];
@@ -930,17 +971,30 @@
     }
 
     function resetToSingleBall() {
-      balls = [ makeBall(canvas.width/2, canvas.height*0.55, baseBallSpeed, -baseBallSpeed) ];
+      balls = [ makeBall(canvas.width / 2, canvas.height * 0.6, 1, -1.25) ];
       syncBallRadius();
     }
 
-    const blockRowCount = 6;
+    // ===== canvas高さ自動調整 =====
+    function resizeCanvasTall() {
+      const headerRect = headerEl.getBoundingClientRect();
+      const available = window.innerHeight - headerRect.bottom - 12;
+      const h = Math.max(430, Math.min(680, Math.floor(available)));
+      canvas.width = 300;
+      canvas.height = h;
+      paddle.y = canvas.height - 25;
+      clampPaddle();
+      initStars();
+    }
+
+    // ===== Blocks =====
     const blockColumnCount = 8;
-    const blockHeight = 16;
+    const blockRowCount = 8;
     const blockPadding = 4;
-    const blockOffsetTop = 44;
+    const blockOffsetTop = 54;
     const blockOffsetLeft = 10;
-    const blockWidth = Math.floor((canvas.width - blockOffsetLeft*2 - blockPadding*(blockColumnCount-1)) / blockColumnCount);
+    const blockHeight = 18;
+    const blockWidth = Math.floor((300 - blockOffsetLeft * 2 - blockPadding * (blockColumnCount - 1)) / blockColumnCount);
 
     let blocks = [];
 
@@ -949,24 +1003,21 @@
       for (let c = 0; c < blockColumnCount; c++) {
         blocks[c] = [];
         for (let r = 0; r < blockRowCount; r++) {
-          const hard = Math.random() < 0.22;
+          const hardRate = 0.16 + Math.min(0.18, (wave - 1) * 0.012);
+          const hard = Math.random() < hardRate;
           const hp = hard ? 2 : 1;
           blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
         }
       }
     }
 
-    initBlocks();
-
-    function resetBlocks() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) {
-          const hard = Math.random() < 0.22;
-          blocks[c][r].hp = hard ? 2 : 1;
-          blocks[c][r].status = 1;
-        }
-      }
+    function resetBlocksForNextWave() {
+      wave += 1;
+      waveSpeedBonus = (wave - 1) * WAVE_SPEED_STEP;
+      initBlocks();
       hitHistory.length = 0;
+      adjustAllBallSpeeds();
+      toast(`WAVE ${wave} / SPEED UP`);
     }
 
     function isAllCleared() {
@@ -991,7 +1042,7 @@
       if (roll < 0.50) type = PowerType.WIDE;
       else if (roll < 0.80) type = PowerType.MULTI;
       else type = PowerType.PIERCE;
-      powerups.push({ x, y, vy: POWER_VY, type });
+      powerups.push({ x, y, vy: POWER_VY, type, pulse: Math.random() * Math.PI * 2 });
     }
 
     let wideTimer = null;
@@ -1004,7 +1055,7 @@
       const wLeft = Math.max(0, wideUntil - now);
       if (wLeft > 0) {
         stWide.classList.add('on');
-        stWide.textContent = `WIDE ${(wLeft/1000).toFixed(1)}s`;
+        stWide.textContent = `WIDE ${(wLeft / 1000).toFixed(1)}s`;
       } else {
         stWide.classList.remove('on');
         stWide.textContent = 'WIDE';
@@ -1013,7 +1064,7 @@
       const pLeft = Math.max(0, pierceUntil - now);
       if (pLeft > 0) {
         stPierce.classList.add('on');
-        stPierce.textContent = `PIERCE ${(pLeft/1000).toFixed(1)}s`;
+        stPierce.textContent = `PIERCE ${(pLeft / 1000).toFixed(1)}s`;
       } else {
         stPierce.classList.remove('on');
         stPierce.textContent = 'PIERCE';
@@ -1028,11 +1079,12 @@
 
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
-        paddle.w = Math.min(paddleBaseW * 1.8, 110);
+        paddle.w = Math.min(paddleBaseW * 1.8, 112);
         wideUntil = Math.max(wideUntil, now + WIDE_MS);
         toast('POWER: WIDE');
         addShake(2, 4);
         beep(520, 0.02, 0.05);
+        spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 12);
 
         wideTimer = setTimeout(() => {
           paddle.w = paddleBaseW;
@@ -1045,10 +1097,11 @@
         toast('POWER: MULTI');
         addShake(3, 6);
         beep(680, 0.03, 0.06);
-        const b = balls[0] || makeBall(canvas.width/2, canvas.height/2, baseBallSpeed, -baseBallSpeed);
+        const b = balls[0] || makeBall(canvas.width / 2, canvas.height / 2, 1, -1);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
-        balls.push(makeBall(b.x, b.y, b.dx * 0.8, -b.dy * 0.8));
+        balls.push(makeBall(b.x, b.y, b.dx * 0.85, -b.dy * 0.85));
         syncBallRadius();
+        spawnSparkle(b.x, b.y, 12);
       }
 
       if (type === PowerType.PIERCE) {
@@ -1057,12 +1110,13 @@
         beep(760, 0.03, 0.06);
         pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
+        spawnSparkle(canvas.width * 0.5, canvas.height * 0.3, 14);
       }
 
       updateStatusUI();
     }
 
-    // ===== Scoring =====
+    // ===== Score / Fever =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -1086,6 +1140,7 @@
       addShake(5, 10);
       beep(980, 0.05, 0.08);
       toast('FEVER x2!');
+      spawnSparkle(canvas.width / 2, canvas.height * 0.45, 24);
     }
 
     function updateFever() {
@@ -1097,62 +1152,236 @@
       }
     }
 
-    // ===== Draw =====
+    // ===== ループ稼ぎ減衰 =====
+    const hitHistory = [];
+    const LOOP_WINDOW_MS = 1200;
+    const SAME_COL_THRESHOLD = 3;
+    const TOTAL_HITS_THRESHOLD = 6;
+
+    function loopPenaltyMultiplier(colIndex) {
+      const now = performance.now();
+
+      while (hitHistory.length && now - hitHistory[0].t > LOOP_WINDOW_MS) {
+        hitHistory.shift();
+      }
+
+      const total = hitHistory.length;
+      const sameCol = hitHistory.filter(h => h.c === colIndex).length;
+
+      let mul = 1.0;
+      if (sameCol >= SAME_COL_THRESHOLD) mul *= 0.65;
+      if (sameCol >= SAME_COL_THRESHOLD + 1) mul *= 0.75;
+      if (total >= TOTAL_HITS_THRESHOLD) mul *= 0.7;
+      if (total >= TOTAL_HITS_THRESHOLD + 2) mul *= 0.7;
+
+      mul = Math.max(0.35, mul);
+      hitHistory.push({ t: now, c: colIndex });
+      return mul;
+    }
+
+    // ===== 描画 =====
+    function drawBackground() {
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, '#06111f');
+      bg.addColorStop(0.48, '#0a0d18');
+      bg.addColorStop(1, '#03050a');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      for (const s of stars) {
+        const tw = 0.4 + Math.sin(performance.now() * 0.002 + s.tw) * 0.25;
+        ctx.globalAlpha = s.a * tw;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.save();
+      const gridAlpha = feverActive ? 0.1 : 0.05;
+      ctx.strokeStyle = `rgba(0,210,255,${gridAlpha})`;
+      ctx.lineWidth = 1;
+      for (let y = 0; y < canvas.height; y += 28) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
     function drawPaddle() {
-      ctx.fillStyle = paddle.color;
+      ctx.save();
+
+      ctx.shadowBlur = 18;
+      ctx.shadowColor = 'rgba(0,210,255,0.7)';
+
+      const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
+      grd.addColorStop(0, '#7ff1ff');
+      grd.addColorStop(0.45, '#00d2ff');
+      grd.addColorStop(1, '#0073b7');
+
+      ctx.fillStyle = grd;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.24)';
+      ctx.fillRect(paddle.x + 4, paddle.y + 1, Math.max(10, paddle.w - 8), 2);
+
+      ctx.restore();
+    }
+
+    function drawBallTrail(b) {
+      if (!b.trail) return;
+      ctx.save();
+      for (let i = 0; i < b.trail.length; i++) {
+        const t = b.trail[i];
+        const alpha = (i + 1) / b.trail.length * 0.22;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = performance.now() < b.pierceUntil ? '#ff66aa' : '#8fefff';
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.r * (0.45 + i / b.trail.length * 0.45), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
     function drawBall(b) {
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+      drawBallTrail(b);
+
+      ctx.save();
+      ctx.shadowBlur = performance.now() < b.pierceUntil ? 22 : 16;
+      ctx.shadowColor = performance.now() < b.pierceUntil ? 'rgba(255,0,127,0.75)' : 'rgba(255,255,255,0.7)';
+
       const pierceOn = performance.now() < b.pierceUntil;
-      ctx.fillStyle = pierceOn ? "#ff66aa" : "#fff";
+      const grd = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, 1, b.x, b.y, b.r);
+      if (pierceOn) {
+        grd.addColorStop(0, '#fff2f7');
+        grd.addColorStop(0.35, '#ff92c6');
+        grd.addColorStop(1, '#ff2f8e');
+      } else {
+        grd.addColorStop(0, '#ffffff');
+        grd.addColorStop(0.45, '#dffcff');
+        grd.addColorStop(1, '#7be4ff');
+      }
+
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      ctx.fillStyle = grd;
       ctx.fill();
-      ctx.closePath();
+
+      ctx.restore();
     }
 
     function drawBlocks() {
       for (let c = 0; c < blockColumnCount; c++) {
         for (let r = 0; r < blockRowCount; r++) {
           const blk = blocks[c][r];
-          if (blk.status === 1) {
-            const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-            const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
-            blk.x = bx;
-            blk.y = by;
+          if (blk.status !== 1) continue;
 
-            const baseHue = r * 35;
-            if (blk.hp === 2) {
-              ctx.fillStyle = `hsl(${baseHue}, 85%, 38%)`;
-              ctx.fillRect(bx, by, blockWidth, blockHeight);
-              ctx.strokeStyle = "rgba(255,255,255,0.35)";
-              ctx.strokeRect(bx + 0.5, by + 0.5, blockWidth - 1, blockHeight - 1);
-            } else {
-              ctx.fillStyle = `hsl(${baseHue}, 70%, 50%)`;
-              ctx.fillRect(bx, by, blockWidth, blockHeight);
-            }
+          const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
+          const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
+          blk.x = bx;
+          blk.y = by;
+
+          const hue = 190 + r * 12 + c * 3;
+          const pulse = 0.06 + Math.sin(performance.now() * 0.004 + c * 0.8 + r * 0.5) * 0.03;
+
+          ctx.save();
+          ctx.shadowBlur = blk.hp === 2 ? 12 : 8;
+          ctx.shadowColor = blk.hp === 2 ? `hsla(${hue}, 90%, 60%, 0.42)` : `hsla(${hue}, 85%, 65%, 0.26)`;
+
+          const grd = ctx.createLinearGradient(bx, by, bx, by + blockHeight);
+          if (blk.hp === 2) {
+            grd.addColorStop(0, `hsla(${hue + 20}, 88%, 62%, 1)`);
+            grd.addColorStop(0.55, `hsla(${hue}, 86%, 42%, 1)`);
+            grd.addColorStop(1, `hsla(${hue - 8}, 82%, 30%, 1)`);
+          } else {
+            grd.addColorStop(0, `hsla(${hue + 15}, 85%, 70%, 1)`);
+            grd.addColorStop(0.55, `hsla(${hue}, 78%, 54%, 1)`);
+            grd.addColorStop(1, `hsla(${hue - 5}, 74%, 42%, 1)`);
           }
+
+          ctx.fillStyle = grd;
+          ctx.fillRect(bx, by, blockWidth, blockHeight);
+
+          ctx.globalAlpha = 0.35 + pulse;
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(bx + 2, by + 2, blockWidth - 4, 2);
+
+          if (blk.hp === 2) {
+            ctx.globalAlpha = 0.9;
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.strokeRect(bx + 0.5, by + 0.5, blockWidth - 1, blockHeight - 1);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.fillRect(bx + 4, by + blockHeight - 5, blockWidth - 8, 1.5);
+          }
+
+          ctx.restore();
         }
       }
     }
 
     function drawPowerups() {
       powerups.forEach(p => {
+        p.pulse += 0.08;
+        const rr = 9 + Math.sin(p.pulse) * 1.2;
+
         ctx.save();
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = 'rgba(255,255,255,0.35)';
+
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 9, 0, Math.PI*2);
-        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
+        const g = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, rr);
+        g.addColorStop(0, 'rgba(255,255,255,0.95)');
+        g.addColorStop(0.28, 'rgba(170,240,255,0.95)');
+        g.addColorStop(1, 'rgba(0,210,255,0.18)');
+        ctx.fillStyle = g;
         ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.25)";
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.42)';
         ctx.stroke();
-        ctx.fillStyle = "#fff";
-        ctx.font = "10px Arial Black";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+
+        ctx.fillStyle = '#021522';
+        ctx.font = '10px Arial Black';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillText(p.type === 'WIDE' ? 'W' : p.type === 'MULTI' ? 'M' : 'P', p.x, p.y + 0.5);
         ctx.restore();
       });
+    }
+
+    function drawHudEffects() {
+      if (feverActive) {
+        const t = performance.now() * 0.012;
+        const a = 0.06 + (Math.sin(t) * 0.5 + 0.5) * 0.12;
+
+        ctx.save();
+        ctx.fillStyle = `rgba(255,0,127,${a})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(255,90,170,${0.32 + a})`;
+        ctx.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 3);
+        ctx.restore();
+      }
+
+      const topGlow = ctx.createLinearGradient(0, 0, 0, 60);
+      topGlow.addColorStop(0, 'rgba(0,210,255,0.09)');
+      topGlow.addColorStop(1, 'rgba(0,210,255,0)');
+      ctx.fillStyle = topGlow;
+      ctx.fillRect(0, 0, canvas.width, 60);
+
+      ctx.save();
+      ctx.globalAlpha = 0.52;
+      ctx.fillStyle = '#fff';
+      ctx.font = '10px Arial Black';
+      ctx.textAlign = 'left';
+      ctx.fillText(`WAVE ${wave}`, 10, canvas.height - 10);
+      ctx.restore();
     }
 
     function clampPaddle() {
@@ -1166,71 +1395,82 @@
       if (b.y < b.r) b.y = b.r;
     }
 
-    // ===== Collision =====
+    function adjustAllBallSpeeds() {
+      const target = getTargetBallSpeed();
+      for (const b of balls) {
+        const v = normalizeVelocity(b.dx, b.dy, target);
+        b.dx = v.dx;
+        b.dy = v.dy;
+      }
+    }
+
+    // ===== 衝突 =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
       for (let c = 0; c < blockColumnCount; c++) {
         for (let r = 0; r < blockRowCount; r++) {
           const blk = blocks[c][r];
-          if (blk.status === 1) {
-            if (b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-              const mul = loopPenaltyMultiplier(c);
+          if (blk.status !== 1) continue;
 
-              blk.hp -= 1;
+          if (b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
+            const mul = loopPenaltyMultiplier(c);
 
-              if (!pierceOn) b.dy = -b.dy;
+            blk.hp -= 1;
+            if (!pierceOn) b.dy = -b.dy;
 
-              const cx = blk.x + blockWidth / 2;
-              const cy = blk.y + blockHeight / 2;
+            const cx = blk.x + blockWidth / 2;
+            const cy = blk.y + blockHeight / 2;
 
-              const partForce = feverActive ? 1.7 : 1.25;
-              const gainSoft = feverActive ? 0.10 : 0.06;
-              const gainHard = feverActive ? 0.14 : 0.085;
+            const partForce = feverActive ? 1.8 : 1.3;
+            const gainSoft = feverActive ? 0.10 : 0.06;
+            const gainHard = feverActive ? 0.145 : 0.085;
 
-              if (blk.hp >= 1) {
-                spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-                spawnParticles(cx, cy, feverActive ? 22 : 12, partForce);
-                addShake(3, 5);
+            if (blk.hp >= 1) {
+              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+              spawnParticles(cx, cy, feverActive ? 22 : 13, partForce, 'blue');
+              spawnSparkle(cx, cy, 8);
+              addShake(3, 5);
 
-                const base = feverActive ? 980 : 780;
-                const freq = Math.min(base + combo * 12, 1600);
-                beep(freq, 0.02, gainSoft);
-                buzz(6);
+              const base = feverActive ? 980 : 780;
+              const freq = Math.min(base + combo * 12, 1600);
+              beep(freq, 0.02, gainSoft);
+              buzz(6);
 
-                combo += 1;
-                addFever(6);
+              combo += 1;
+              addFever(6);
+              addScore(Math.max(1, Math.floor(8 * mul)));
+            }
 
-                addScore(Math.max(1, Math.floor(8 * mul)));
-              }
+            if (blk.hp <= 0) {
+              blk.status = 0;
 
-              if (blk.hp <= 0) {
-                blk.status = 0;
+              combo += 1;
+              addFever(8);
+              addScore(Math.max(1, Math.floor(12 * mul)));
 
-                combo += 1;
-                addFever(8);
+              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+              spawnParticles(cx, cy, feverActive ? 42 : 28, partForce * 1.15, feverActive ? 'pink' : 'white');
+              spawnSparkle(cx, cy, feverActive ? 16 : 10);
+              addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
 
-                addScore(Math.max(1, Math.floor(12 * mul)));
+              const base2 = feverActive ? 1400 : 980;
+              const freq2 = Math.min(base2 + combo * 18, 2200);
+              beep(freq2, 0.03, gainHard);
+              buzz(feverActive ? 14 : 10);
 
-                spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-                spawnParticles(cx, cy, feverActive ? 40 : 26, partForce * 1.1);
-                addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
+              maybeDropPowerup(cx, cy);
 
-                const base2 = feverActive ? 1400 : 980;
-                const freq2 = Math.min(base2 + combo * 18, 2200);
-                beep(freq2, 0.03, gainHard);
-                buzz(feverActive ? 14 : 10);
-
-                maybeDropPowerup(cx, cy);
-
-                if (isAllCleared()) {
-                  resetBlocks();
-                  addShake(10, 14);
-                  beep(1300, 0.06, feverActive ? 0.14 : 0.11);
-                  toast('NEXT WAVE!');
-                }
+              if (isAllCleared()) {
+                addShake(10, 14);
+                beep(1300, 0.06, feverActive ? 0.14 : 0.11);
+                spawnParticles(canvas.width / 2, canvas.height * 0.35, 55, 2.1, 'pink');
+                spawnSparkle(canvas.width / 2, canvas.height * 0.35, 28);
+                resetBlocksForNextWave();
               }
             }
+
+            return;
           }
         }
       }
@@ -1285,6 +1525,10 @@
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
+        if (!b.trail) b.trail = [];
+        b.trail.push({ x: b.x, y: b.y, r: b.r });
+        if (b.trail.length > 7) b.trail.shift();
+
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
 
@@ -1303,15 +1547,19 @@
 
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
-            const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-            const MAX_DX = 3.2;
-            const MIN_DY = 2.6;
+            const hitPos = (b.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+            const targetSpeed = getTargetBallSpeed();
+            const MAX_DX_RATIO = 0.82;
+            const MIN_DY_RATIO = 0.58;
 
-            let ndx = hitPos * MAX_DX;
-            ndx = Math.max(-MAX_DX, Math.min(MAX_DX, ndx));
-            b.dx = ndx;
+            let ndx = hitPos * targetSpeed * MAX_DX_RATIO;
+            ndx = Math.max(-targetSpeed * MAX_DX_RATIO, Math.min(targetSpeed * MAX_DX_RATIO, ndx));
 
-            b.dy = -Math.max(MIN_DY, Math.abs(b.dy));
+            let ndy = -Math.max(targetSpeed * MIN_DY_RATIO, targetSpeed - Math.abs(ndx));
+            const nv = normalizeVelocity(ndx, ndy, targetSpeed);
+
+            b.dx = nv.dx;
+            b.dy = nv.dy;
 
             combo = 0;
             comboMul = 1.0;
@@ -1349,17 +1597,8 @@
         shakePower *= 0.9;
       }
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (feverActive) {
-        const t = performance.now() * 0.012;
-        const a = 0.08 + (Math.sin(t) * 0.5 + 0.5) * 0.12;
-        ctx.save();
-        ctx.fillStyle = `rgba(255,0,127,${a})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-      }
-
+      drawBackground();
+      drawHudEffects();
       drawBlocks();
       drawPowerups();
       balls.forEach(drawBall);
@@ -1370,8 +1609,10 @@
 
       updateParticles();
       updateFlashes();
+      updateSparkles();
       drawFlashes();
       drawParticles();
+      drawSparkles();
 
       ctx.restore();
 
@@ -1399,6 +1640,8 @@
       comboMul = 1.0;
       fever = 0;
       feverActive = false;
+      wave = 1;
+      waveSpeedBonus = 0;
 
       wideUntil = 0;
       pierceUntil = 0;
@@ -1407,12 +1650,13 @@
       powerups.length = 0;
       particles.length = 0;
       flashes.length = 0;
-
-      initBlocks();
+      sparkles.length = 0;
 
       paddle.w = paddleBaseW;
       paddle.x = (canvas.width - paddle.w) / 2;
+      paddle.y = canvas.height - 25;
 
+      initBlocks();
       resetToSingleBall();
       scoreEl.innerText = '0';
 
@@ -1463,15 +1707,6 @@
       fetchRanking();
     }
 
-    pauseBtn.addEventListener('click', () => {
-      if (!running || isGameOver) return;
-      if (isPaused) resumeGame();
-      else pauseGame();
-    });
-
-    resumeBtn.addEventListener('click', resumeGame);
-    restartBtn.addEventListener('click', restartFromPause);
-
     function shouldShowTutorial() {
       return localStorage.getItem('tutorialSeen') !== '1';
     }
@@ -1490,14 +1725,6 @@
         startGame();
       }
     }
-
-    tutorialOkBtn.addEventListener('click', () => {
-      ensureAudio();
-      beep(720, 0.03, 0.06);
-      markTutorialSeen();
-      showPanel(null);
-      startGame();
-    });
 
     async function submitScore() {
       const name = (nameInput.value || 'PLAYER').trim().slice(0, 10) || 'PLAYER';
@@ -1529,9 +1756,6 @@
       showPanel(startPanel);
     }
 
-    // ===== 操作：画面どこでも =====
-    let isMouseDown = false;
-
     function movePaddleByClientX(clientX) {
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
@@ -1539,6 +1763,9 @@
       paddle.x = ratio * canvas.width - paddle.w / 2;
       clampPaddle();
     }
+
+    // ===== 入力 =====
+    let isMouseDown = false;
 
     window.addEventListener('touchstart', (e) => {
       if (!running || isPaused || isGameOver) return;
@@ -1569,7 +1796,25 @@
     });
 
     // ===== ボタン bind =====
+    pauseBtn.addEventListener('click', () => {
+      if (!running || isGameOver) return;
+      if (isPaused) resumeGame();
+      else pauseGame();
+    });
+
+    resumeBtn.addEventListener('click', resumeGame);
+    restartBtn.addEventListener('click', restartFromPause);
+
     startBtn.addEventListener('click', onStartPressed);
+
+    tutorialOkBtn.addEventListener('click', () => {
+      ensureAudio();
+      beep(720, 0.03, 0.06);
+      markTutorialSeen();
+      showPanel(null);
+      startGame();
+    });
+
     submitBtn.addEventListener('click', submitScore);
     cancelSubmitBtn.addEventListener('click', backToStartFromGameOver);
 
@@ -1600,6 +1845,7 @@
     });
 
     adminDeleteAllBtn.addEventListener('click', deleteAllScores);
+
     adminLogoutBtn.addEventListener('click', () => {
       adminLogout();
       toast('LOGOUT');
@@ -1621,7 +1867,16 @@
       if (e.key === 'Enter') adminLogin();
     });
 
-    // ===== 初期表示 =====
+    window.addEventListener('resize', () => {
+      resizeCanvasTall();
+    });
+
+    // ===== 初期化 =====
+    resizeCanvasTall();
+    paddle.x = (canvas.width - paddle.w) / 2;
+    paddle.y = canvas.height - 25;
+    initStars();
+    initBlocks();
     showPanel(startPanel);
     updateStatusUI();
     fetchRanking();
