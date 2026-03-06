@@ -20,8 +20,8 @@
 
     body {
       background:
-        radial-gradient(circle at 20% 10%, rgba(0,210,255,0.12), transparent 28%),
-        radial-gradient(circle at 80% 0%, rgba(255,0,127,0.12), transparent 26%),
+        radial-gradient(circle at 20% 10%, rgba(0,210,255,0.10), transparent 28%),
+        radial-gradient(circle at 80% 0%, rgba(255,0,127,0.10), transparent 26%),
         linear-gradient(180deg, #05050a 0%, #080b16 48%, #05050a 100%);
       color: #fff;
       font-family: 'Arial Black', sans-serif;
@@ -47,8 +47,8 @@
       font-size: 26px;
       color: var(--neon-blue);
       text-shadow:
-        0 0 8px rgba(0,210,255,0.85),
-        0 0 20px rgba(0,210,255,0.35);
+        0 0 8px rgba(0,210,255,0.75),
+        0 0 18px rgba(0,210,255,0.25);
     }
 
     .status-line {
@@ -69,14 +69,11 @@
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.16);
       background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
     }
 
     .badge.on {
       border-color: rgba(0,210,255,0.62);
-      box-shadow:
-        0 0 14px rgba(0,210,255,0.22),
-        inset 0 1px 0 rgba(255,255,255,0.12);
+      box-shadow: 0 0 10px rgba(0,210,255,0.16);
       color: #fff;
     }
 
@@ -99,9 +96,8 @@
       border: 3px solid rgba(0,210,255,0.85);
       background: #000;
       box-shadow:
-        0 0 18px rgba(0,210,255,0.28),
-        0 0 34px rgba(0,210,255,0.12),
-        inset 0 0 24px rgba(255,255,255,0.04);
+        0 0 14px rgba(0,210,255,0.22),
+        0 0 24px rgba(0,210,255,0.08);
     }
 
     .menu-btn {
@@ -120,7 +116,7 @@
     .menu-btn:hover {
       background: rgba(0,255,0,0.14);
       color: #fff;
-      box-shadow: 0 0 18px rgba(0,255,0,0.18);
+      box-shadow: 0 0 14px rgba(0,255,0,0.14);
     }
 
     .menu-btn.secondary {
@@ -131,7 +127,7 @@
     .menu-btn.secondary:hover {
       background: rgba(255,255,255,0.1);
       color: #fff;
-      box-shadow: 0 0 14px rgba(255,255,255,0.09);
+      box-shadow: 0 0 10px rgba(255,255,255,0.07);
     }
 
     .menu-btn.danger {
@@ -142,7 +138,7 @@
     .menu-btn.danger:hover {
       background: rgba(255,0,127,0.16);
       color: #fff;
-      box-shadow: 0 0 18px rgba(255,0,127,0.16);
+      box-shadow: 0 0 14px rgba(255,0,127,0.12);
     }
 
     .panel {
@@ -163,8 +159,7 @@
       border: 1px solid rgba(255,255,255,0.16);
       backdrop-filter: blur(12px);
       box-shadow:
-        0 0 0 1px rgba(255,255,255,0.04) inset,
-        0 20px 50px rgba(0,0,0,0.45);
+        0 16px 40px rgba(0,0,0,0.36);
     }
 
     .panel h2 {
@@ -208,7 +203,6 @@
       letter-spacing: 1px;
       display: none;
       user-select: none;
-      box-shadow: 0 0 12px rgba(255,255,255,0.08);
     }
 
     #name-input,
@@ -254,7 +248,6 @@
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       text-align: left;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
 
     .ranking-title {
@@ -263,7 +256,7 @@
       color: var(--neon-pink);
       margin-bottom: 8px;
       letter-spacing: 0.8px;
-      text-shadow: 0 0 10px rgba(255,0,127,0.28);
+      text-shadow: 0 0 8px rgba(255,0,127,0.2);
     }
 
     .ranking-list {
@@ -298,7 +291,6 @@
 
     .rank-score {
       color: var(--neon-blue);
-      text-shadow: 0 0 8px rgba(0,210,255,0.2);
     }
 
     .empty-note {
@@ -437,7 +429,7 @@
         ・ブロック数が増えて長く気持ちよく遊べる<br>
         ・全消しごとに少しずつスピードUP<br>
         ・硬いブロックは2回で破壊<br>
-        ・同じ場所ばかり壊すと得点が下がる<br>
+        ・waveが進むほど硬いブロック率も少し上がる<br>
         ・FEVER中は演出とスコア倍率が強化
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
@@ -568,7 +560,6 @@
         .replaceAll("'", '&#39;');
     }
 
-    // ===== ランキング =====
     async function fetchRanking() {
       rankingListEl.innerHTML = '<div class="empty-note">Loading...</div>';
       try {
@@ -592,7 +583,6 @@
       }
     }
 
-    // ===== 管理機能 =====
     async function adminCheckLogin() {
       if (!adminToken) return false;
       try {
@@ -754,7 +744,6 @@
       showPanel(startPanel);
     }
 
-    // ===== エフェクト =====
     let shakeTime = 0;
     let shakePower = 0;
     const particles = [];
@@ -764,12 +753,12 @@
 
     function initStars() {
       stars.length = 0;
-      for (let i = 0; i < 34; i++) {
+      for (let i = 0; i < 16; i++) {
         stars.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          r: 0.7 + Math.random() * 1.8,
-          a: 0.15 + Math.random() * 0.5,
+          r: 0.7 + Math.random() * 1.4,
+          a: 0.12 + Math.random() * 0.35,
           tw: Math.random() * Math.PI * 2
         });
       }
@@ -780,31 +769,31 @@
       shakeTime = Math.max(shakeTime, t);
     }
 
-    function spawnParticles(x, y, n = 14, force = 1.0, colorMode = 'white') {
+    function spawnParticles(x, y, n = 10, force = 1.0, colorMode = 'white') {
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
-        const s = (1 + Math.random() * 3.4) * force;
+        const s = (1 + Math.random() * 2.6) * force;
         particles.push({
           x, y,
           vx: Math.cos(a) * s,
           vy: Math.sin(a) * s,
-          life: 18 + Math.random() * 14,
+          life: 14 + Math.random() * 10,
           mode: colorMode
         });
       }
     }
 
     function spawnFlash(x, y, w, h) {
-      flashes.push({ x, y, w, h, life: 8 });
+      flashes.push({ x, y, w, h, life: 6 });
     }
 
-    function spawnSparkle(x, y, n = 8) {
+    function spawnSparkle(x, y, n = 5) {
       for (let i = 0; i < n; i++) {
         sparkles.push({
-          x: x + (Math.random() * 22 - 11),
-          y: y + (Math.random() * 22 - 11),
-          life: 10 + Math.random() * 12,
-          r: 1 + Math.random() * 2
+          x: x + (Math.random() * 18 - 9),
+          y: y + (Math.random() * 18 - 9),
+          life: 8 + Math.random() * 8,
+          r: 0.8 + Math.random() * 1.6
         });
       }
     }
@@ -814,7 +803,7 @@
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.10;
+        p.vy += 0.09;
         p.life -= 1;
         if (p.life <= 0) particles.splice(i, 1);
       }
@@ -837,12 +826,12 @@
     function drawParticles() {
       ctx.save();
       for (const p of particles) {
-        const a = Math.max(0, p.life / 30);
+        const a = Math.max(0, p.life / 24);
         ctx.globalAlpha = a;
         if (p.mode === 'pink') ctx.fillStyle = '#ff66aa';
         else if (p.mode === 'blue') ctx.fillStyle = '#66e6ff';
         else ctx.fillStyle = '#fff';
-        ctx.fillRect(p.x, p.y, 2.4, 2.4);
+        ctx.fillRect(p.x, p.y, 2, 2);
       }
       ctx.restore();
     }
@@ -850,12 +839,9 @@
     function drawFlashes() {
       ctx.save();
       for (const f of flashes) {
-        const a = Math.max(0, f.life / 8);
-        ctx.globalAlpha = a * 0.55;
-        const grd = ctx.createLinearGradient(f.x, f.y, f.x, f.y + f.h);
-        grd.addColorStop(0, 'rgba(255,255,255,0.9)');
-        grd.addColorStop(1, 'rgba(255,255,255,0.1)');
-        ctx.fillStyle = grd;
+        const a = Math.max(0, f.life / 6);
+        ctx.globalAlpha = a * 0.45;
+        ctx.fillStyle = '#fff';
         ctx.fillRect(f.x, f.y, f.w, f.h);
       }
       ctx.restore();
@@ -864,8 +850,8 @@
     function drawSparkles() {
       ctx.save();
       for (const s of sparkles) {
-        const a = Math.max(0, s.life / 20);
-        ctx.globalAlpha = a * 0.8;
+        const a = Math.max(0, s.life / 16);
+        ctx.globalAlpha = a * 0.7;
         ctx.fillStyle = '#fff';
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -874,7 +860,6 @@
       ctx.restore();
     }
 
-    // ===== WebAudio =====
     let audioCtx = null;
     function ensureAudio() {
       try {
@@ -903,7 +888,6 @@
       if (navigator.vibrate) navigator.vibrate(ms);
     }
 
-    // ===== ゲーム状態 =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -975,7 +959,6 @@
       syncBallRadius();
     }
 
-    // ===== canvas高さ自動調整 =====
     function resizeCanvasTall() {
       const headerRect = headerEl.getBoundingClientRect();
       const available = window.innerHeight - headerRect.bottom - 12;
@@ -987,7 +970,6 @@
       initStars();
     }
 
-    // ===== Blocks =====
     const blockColumnCount = 8;
     const blockRowCount = 8;
     const blockPadding = 4;
@@ -998,12 +980,17 @@
 
     let blocks = [];
 
+    function getHardBlockRate() {
+      return Math.min(0.34, 0.16 + (wave - 1) * 0.015);
+    }
+
     function initBlocks() {
       blocks = [];
+      const hardRate = getHardBlockRate();
+
       for (let c = 0; c < blockColumnCount; c++) {
         blocks[c] = [];
         for (let r = 0; r < blockRowCount; r++) {
-          const hardRate = 0.16 + Math.min(0.18, (wave - 1) * 0.012);
           const hard = Math.random() < hardRate;
           const hp = hard ? 2 : 1;
           blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
@@ -1017,7 +1004,7 @@
       initBlocks();
       hitHistory.length = 0;
       adjustAllBallSpeeds();
-      toast(`WAVE ${wave} / SPEED UP`);
+      toast(`WAVE ${wave} / HARD ${(getHardBlockRate() * 100).toFixed(0)}%`);
     }
 
     function isAllCleared() {
@@ -1029,7 +1016,6 @@
       return true;
     }
 
-    // ===== Powerups =====
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -1084,7 +1070,7 @@
         toast('POWER: WIDE');
         addShake(2, 4);
         beep(520, 0.02, 0.05);
-        spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 12);
+        spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 4);
 
         wideTimer = setTimeout(() => {
           paddle.w = paddleBaseW;
@@ -1101,7 +1087,7 @@
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
         balls.push(makeBall(b.x, b.y, b.dx * 0.85, -b.dy * 0.85));
         syncBallRadius();
-        spawnSparkle(b.x, b.y, 12);
+        spawnSparkle(b.x, b.y, 4);
       }
 
       if (type === PowerType.PIERCE) {
@@ -1110,13 +1096,12 @@
         beep(760, 0.03, 0.06);
         pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
-        spawnSparkle(canvas.width * 0.5, canvas.height * 0.3, 14);
+        spawnSparkle(canvas.width * 0.5, canvas.height * 0.3, 5);
       }
 
       updateStatusUI();
     }
 
-    // ===== Score / Fever =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -1140,7 +1125,7 @@
       addShake(5, 10);
       beep(980, 0.05, 0.08);
       toast('FEVER x2!');
-      spawnSparkle(canvas.width / 2, canvas.height * 0.45, 24);
+      spawnSparkle(canvas.width / 2, canvas.height * 0.45, 10);
     }
 
     function updateFever() {
@@ -1152,7 +1137,6 @@
       }
     }
 
-    // ===== ループ稼ぎ減衰 =====
     const hitHistory = [];
     const LOOP_WINDOW_MS = 1200;
     const SAME_COL_THRESHOLD = 3;
@@ -1179,7 +1163,6 @@
       return mul;
     }
 
-    // ===== 描画 =====
     function drawBackground() {
       const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
       bg.addColorStop(0, '#06111f');
@@ -1190,7 +1173,7 @@
 
       ctx.save();
       for (const s of stars) {
-        const tw = 0.4 + Math.sin(performance.now() * 0.002 + s.tw) * 0.25;
+        const tw = 0.45 + Math.sin(performance.now() * 0.0018 + s.tw) * 0.2;
         ctx.globalAlpha = s.a * tw;
         ctx.fillStyle = '#fff';
         ctx.beginPath();
@@ -1198,25 +1181,10 @@
         ctx.fill();
       }
       ctx.restore();
-
-      ctx.save();
-      const gridAlpha = feverActive ? 0.1 : 0.05;
-      ctx.strokeStyle = `rgba(0,210,255,${gridAlpha})`;
-      ctx.lineWidth = 1;
-      for (let y = 0; y < canvas.height; y += 28) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-      ctx.restore();
     }
 
     function drawPaddle() {
       ctx.save();
-
-      ctx.shadowBlur = 18;
-      ctx.shadowColor = 'rgba(0,210,255,0.7)';
 
       const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
       grd.addColorStop(0, '#7ff1ff');
@@ -1226,7 +1194,7 @@
       ctx.fillStyle = grd;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
 
-      ctx.fillStyle = 'rgba(255,255,255,0.24)';
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(paddle.x + 4, paddle.y + 1, Math.max(10, paddle.w - 8), 2);
 
       ctx.restore();
@@ -1237,11 +1205,11 @@
       ctx.save();
       for (let i = 0; i < b.trail.length; i++) {
         const t = b.trail[i];
-        const alpha = (i + 1) / b.trail.length * 0.22;
+        const alpha = (i + 1) / b.trail.length * 0.16;
         ctx.globalAlpha = alpha;
         ctx.fillStyle = performance.now() < b.pierceUntil ? '#ff66aa' : '#8fefff';
         ctx.beginPath();
-        ctx.arc(t.x, t.y, t.r * (0.45 + i / b.trail.length * 0.45), 0, Math.PI * 2);
+        ctx.arc(t.x, t.y, t.r * (0.45 + i / b.trail.length * 0.32), 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.restore();
@@ -1251,8 +1219,6 @@
       drawBallTrail(b);
 
       ctx.save();
-      ctx.shadowBlur = performance.now() < b.pierceUntil ? 22 : 16;
-      ctx.shadowColor = performance.now() < b.pierceUntil ? 'rgba(255,0,127,0.75)' : 'rgba(255,255,255,0.7)';
 
       const pierceOn = performance.now() < b.pierceUntil;
       const grd = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, 1, b.x, b.y, b.r);
@@ -1286,40 +1252,30 @@
           blk.y = by;
 
           const hue = 190 + r * 12 + c * 3;
-          const pulse = 0.06 + Math.sin(performance.now() * 0.004 + c * 0.8 + r * 0.5) * 0.03;
-
-          ctx.save();
-          ctx.shadowBlur = blk.hp === 2 ? 12 : 8;
-          ctx.shadowColor = blk.hp === 2 ? `hsla(${hue}, 90%, 60%, 0.42)` : `hsla(${hue}, 85%, 65%, 0.26)`;
 
           const grd = ctx.createLinearGradient(bx, by, bx, by + blockHeight);
           if (blk.hp === 2) {
-            grd.addColorStop(0, `hsla(${hue + 20}, 88%, 62%, 1)`);
-            grd.addColorStop(0.55, `hsla(${hue}, 86%, 42%, 1)`);
-            grd.addColorStop(1, `hsla(${hue - 8}, 82%, 30%, 1)`);
+            grd.addColorStop(0, `hsla(${hue + 20}, 88%, 58%, 1)`);
+            grd.addColorStop(0.55, `hsla(${hue}, 86%, 40%, 1)`);
+            grd.addColorStop(1, `hsla(${hue - 8}, 82%, 28%, 1)`);
           } else {
-            grd.addColorStop(0, `hsla(${hue + 15}, 85%, 70%, 1)`);
-            grd.addColorStop(0.55, `hsla(${hue}, 78%, 54%, 1)`);
-            grd.addColorStop(1, `hsla(${hue - 5}, 74%, 42%, 1)`);
+            grd.addColorStop(0, `hsla(${hue + 15}, 85%, 66%, 1)`);
+            grd.addColorStop(0.55, `hsla(${hue}, 78%, 52%, 1)`);
+            grd.addColorStop(1, `hsla(${hue - 5}, 74%, 41%, 1)`);
           }
 
           ctx.fillStyle = grd;
           ctx.fillRect(bx, by, blockWidth, blockHeight);
 
-          ctx.globalAlpha = 0.35 + pulse;
+          ctx.globalAlpha = 0.28;
           ctx.fillStyle = '#fff';
           ctx.fillRect(bx + 2, by + 2, blockWidth - 4, 2);
+          ctx.globalAlpha = 1;
 
           if (blk.hp === 2) {
-            ctx.globalAlpha = 0.9;
-            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.34)';
             ctx.strokeRect(bx + 0.5, by + 0.5, blockWidth - 1, blockHeight - 1);
-
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.fillRect(bx + 4, by + blockHeight - 5, blockWidth - 8, 1.5);
           }
-
-          ctx.restore();
         }
       }
     }
@@ -1327,11 +1283,9 @@
     function drawPowerups() {
       powerups.forEach(p => {
         p.pulse += 0.08;
-        const rr = 9 + Math.sin(p.pulse) * 1.2;
+        const rr = 8.5 + Math.sin(p.pulse) * 0.8;
 
         ctx.save();
-        ctx.shadowBlur = 18;
-        ctx.shadowColor = 'rgba(255,255,255,0.35)';
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
@@ -1342,7 +1296,7 @@
         ctx.fillStyle = g;
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.42)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.32)';
         ctx.stroke();
 
         ctx.fillStyle = '#021522';
@@ -1356,27 +1310,27 @@
 
     function drawHudEffects() {
       if (feverActive) {
-        const t = performance.now() * 0.012;
-        const a = 0.06 + (Math.sin(t) * 0.5 + 0.5) * 0.12;
+        const t = performance.now() * 0.010;
+        const a = 0.05 + (Math.sin(t) * 0.5 + 0.5) * 0.08;
 
         ctx.save();
         ctx.fillStyle = `rgba(255,0,127,${a})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.lineWidth = 3;
-        ctx.strokeStyle = `rgba(255,90,170,${0.32 + a})`;
-        ctx.strokeRect(1.5, 1.5, canvas.width - 3, canvas.height - 3);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = `rgba(255,90,170,${0.18 + a})`;
+        ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
         ctx.restore();
       }
 
-      const topGlow = ctx.createLinearGradient(0, 0, 0, 60);
-      topGlow.addColorStop(0, 'rgba(0,210,255,0.09)');
+      const topGlow = ctx.createLinearGradient(0, 0, 0, 44);
+      topGlow.addColorStop(0, 'rgba(0,210,255,0.07)');
       topGlow.addColorStop(1, 'rgba(0,210,255,0)');
       ctx.fillStyle = topGlow;
-      ctx.fillRect(0, 0, canvas.width, 60);
+      ctx.fillRect(0, 0, canvas.width, 44);
 
       ctx.save();
-      ctx.globalAlpha = 0.52;
+      ctx.globalAlpha = 0.5;
       ctx.fillStyle = '#fff';
       ctx.font = '10px Arial Black';
       ctx.textAlign = 'left';
@@ -1404,7 +1358,6 @@
       }
     }
 
-    // ===== 衝突 =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -1422,14 +1375,14 @@
             const cx = blk.x + blockWidth / 2;
             const cy = blk.y + blockHeight / 2;
 
-            const partForce = feverActive ? 1.8 : 1.3;
-            const gainSoft = feverActive ? 0.10 : 0.06;
-            const gainHard = feverActive ? 0.145 : 0.085;
+            const partForce = feverActive ? 1.55 : 1.15;
+            const gainSoft = feverActive ? 0.09 : 0.055;
+            const gainHard = feverActive ? 0.13 : 0.078;
 
             if (blk.hp >= 1) {
               spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-              spawnParticles(cx, cy, feverActive ? 22 : 13, partForce, 'blue');
-              spawnSparkle(cx, cy, 8);
+              spawnParticles(cx, cy, feverActive ? 13 : 8, partForce, 'blue');
+              spawnSparkle(cx, cy, 4);
               addShake(3, 5);
 
               const base = feverActive ? 980 : 780;
@@ -1450,8 +1403,8 @@
               addScore(Math.max(1, Math.floor(12 * mul)));
 
               spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-              spawnParticles(cx, cy, feverActive ? 42 : 28, partForce * 1.15, feverActive ? 'pink' : 'white');
-              spawnSparkle(cx, cy, feverActive ? 16 : 10);
+              spawnParticles(cx, cy, feverActive ? 22 : 14, partForce * 1.08, feverActive ? 'pink' : 'white');
+              spawnSparkle(cx, cy, feverActive ? 8 : 5);
               addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
 
               const base2 = feverActive ? 1400 : 980;
@@ -1464,10 +1417,12 @@
               if (isAllCleared()) {
                 addShake(10, 14);
                 beep(1300, 0.06, feverActive ? 0.14 : 0.11);
-                spawnParticles(canvas.width / 2, canvas.height * 0.35, 55, 2.1, 'pink');
-                spawnSparkle(canvas.width / 2, canvas.height * 0.35, 28);
+                spawnParticles(canvas.width / 2, canvas.height * 0.35, 28, 1.8, 'pink');
+                spawnSparkle(canvas.width / 2, canvas.height * 0.35, 10);
                 resetBlocksForNextWave();
               }
+
+              return;
             }
 
             return;
@@ -1527,7 +1482,7 @@
 
         if (!b.trail) b.trail = [];
         b.trail.push({ x: b.x, y: b.y, r: b.r });
-        if (b.trail.length > 7) b.trail.shift();
+        if (b.trail.length > 4) b.trail.shift();
 
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
@@ -1620,7 +1575,6 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== UI =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -1764,7 +1718,6 @@
       clampPaddle();
     }
 
-    // ===== 入力 =====
     let isMouseDown = false;
 
     window.addEventListener('touchstart', (e) => {
@@ -1795,7 +1748,6 @@
       movePaddleByClientX(e.clientX);
     });
 
-    // ===== ボタン bind =====
     pauseBtn.addEventListener('click', () => {
       if (!running || isGameOver) return;
       if (isPaused) resumeGame();
@@ -1871,7 +1823,6 @@
       resizeCanvasTall();
     });
 
-    // ===== 初期化 =====
     resizeCanvasTall();
     paddle.x = (canvas.width - paddle.w) / 2;
     paddle.y = canvas.height - 25;
