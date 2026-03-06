@@ -8,14 +8,35 @@
     :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
     body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
 
-    .header { margin-top: 18px; text-align: center; position: relative; width: 100%; max-width: 380px; }
+    .header { margin-top: 18px; text-align: center; position: relative; width: 100%; max-width: 420px; }
     .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+
+    /* ★ パワーアップ状況 */
+    .status-line{
+      margin-top: 8px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.6px;
+      min-height: 16px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+      flex-wrap: wrap;
+    }
+    .badge{
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.06);
+    }
+    .badge.on{
+      border-color: rgba(0,210,255,0.6);
+      box-shadow: 0 0 10px rgba(0,210,255,0.18);
+      color: #fff;
+    }
 
     #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
     canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
-
-    .controls { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: auto; padding-bottom: 16px; }
-    .touch-area { width: 90%; height: 64px; background: var(--glass); border: 2px dashed rgba(255,255,255,0.2); border-radius: 35px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 12px; letter-spacing: 2px; }
 
     .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
     .menu-btn:hover { background: var(--neon-green); color: #000; }
@@ -69,12 +90,23 @@
       background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
       padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
     }
+
+    /* ★ 下の操作UIは消す */
+    .controls{ display:none; }
   </style>
 </head>
 <body>
 
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
+
+    <!-- ★ 状態表示 -->
+    <div class="status-line" id="status-line">
+      <span class="badge" id="st-wide">WIDE</span>
+      <span class="badge" id="st-pierce">PIERCE</span>
+      <span class="badge" id="st-multi">MULTI x1</span>
+    </div>
+
     <div id="pause-btn">⏸</div>
   </div>
 
@@ -91,11 +123,11 @@
     <div id="tutorial-panel" class="panel">
       <h2 style="color:#fff;">HOW TO PLAY</h2>
       <div class="tip">
-        ・下のエリアをドラッグしてパドル移動<br>
+        ・画面どこをこすっても操作できる（PCは押しながら）<br>
         ・硬いブロックは2回で割れる（割れた時が最高）<br>
         ・連続破壊でCOMBO（スコアUP）<br>
         ・FEVERでスコア2倍（一定数壊すと発動）<br>
-        ・落ちてくる W/M/P はパワーアップ
+        ・W/M/P はパワーアップ（上に状態が出る）
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -117,6 +149,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
+  <!-- controls は残しても display:none で見えない -->
   <div class="controls">
     <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
   </div>
@@ -129,6 +162,11 @@
 
     const scoreEl = document.getElementById('score');
     const toastEl = document.getElementById('toast');
+
+    // 状態表示
+    const stWide = document.getElementById('st-wide');
+    const stPierce = document.getElementById('st-pierce');
+    const stMulti = document.getElementById('st-multi');
 
     const pauseBtn = document.getElementById('pause-btn');
 
@@ -147,8 +185,6 @@
     const nameInput = document.getElementById('name-input');
     const submitBtn = document.getElementById('submit-btn');
 
-    const touchArea = document.getElementById('touch-control');
-
     function toast(msg) {
       toastEl.textContent = msg;
       toastEl.style.display = 'block';
@@ -156,12 +192,12 @@
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1000);
     }
 
-    // ===== 爽快感：シェイク + パーティクル + SE + フラッシュ =====
+    // ===== エフェクト =====
     let shakeTime = 0;
     let shakePower = 0;
 
-    const particles = []; // {x,y,vx,vy,life}
-    const flashes = [];   // {x,y,w,h,life}
+    const particles = [];
+    const flashes = [];
 
     function addShake(p = 6, t = 10) {
       shakePower = Math.max(shakePower, p);
@@ -263,6 +299,38 @@
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
+    // パワーアップ状態（表示用）
+    let wideUntil = 0;   // performance.now() の期限
+    let pierceUntil = 0; // performance.now() の期限
+
+    function updateStatusUI() {
+      const now = performance.now();
+
+      // WIDE
+      const wLeft = Math.max(0, wideUntil - now);
+      if (wLeft > 0) {
+        stWide.classList.add('on');
+        stWide.textContent = `WIDE ${(wLeft/1000).toFixed(1)}s`;
+      } else {
+        stWide.classList.remove('on');
+        stWide.textContent = 'WIDE';
+      }
+
+      // PIERCE
+      const pLeft = Math.max(0, pierceUntil - now);
+      if (pLeft > 0) {
+        stPierce.classList.add('on');
+        stPierce.textContent = `PIERCE ${(pLeft/1000).toFixed(1)}s`;
+      } else {
+        stPierce.classList.remove('on');
+        stPierce.textContent = 'PIERCE';
+      }
+
+      // MULTI
+      stMulti.classList.toggle('on', balls.length > 1);
+      stMulti.textContent = `MULTI x${balls.length}`;
+    }
+
     // Paddle
     const paddleBaseW = 60;
     const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
@@ -294,7 +362,7 @@
       syncBallRadius();
     }
 
-    // Blocks with HP (1 or 2)
+    // Blocks with HP
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -309,7 +377,7 @@
       for(let c=0; c<blockColumnCount; c++) {
         blocks[c] = [];
         for(let r=0; r<blockRowCount; r++) {
-          const hard = Math.random() < 0.22; // ★ 22%を硬さ2に
+          const hard = Math.random() < 0.22;
           const hp = hard ? 2 : 1;
           blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
         }
@@ -358,10 +426,11 @@
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
         paddle.w = Math.min(paddleBaseW * 1.8, 110);
+        wideUntil = Math.max(wideUntil, now + WIDE_MS); // ★期限を更新
         toast('POWER: WIDE');
         addShake(2, 4);
         beep(520, 0.02, 0.05);
-        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); }, WIDE_MS);
+        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); wideUntil = 0; }, WIDE_MS);
       }
 
       if (type === PowerType.MULTI) {
@@ -378,8 +447,11 @@
         toast('POWER: PIERCE');
         addShake(3, 6);
         beep(760, 0.03, 0.06);
+        pierceUntil = Math.max(pierceUntil, now + PIERCE_MS); // ★期限を更新
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
       }
+
+      updateStatusUI();
     }
 
     // ===== Scoring =====
@@ -404,7 +476,7 @@
       fever = 0;
       feverEndAt = performance.now() + FEVER_DURATION_MS;
       addShake(5, 10);
-      beep(980, 0.05, 0.08); // ★ フィーバー開始は音量UP
+      beep(980, 0.05, 0.08);
       toast('FEVER x2!');
     }
 
@@ -442,7 +514,6 @@
             blk.x = bx;
             blk.y = by;
 
-            // 色：硬いほど濃い + 枠
             const baseHue = r * 35;
             if (blk.hp === 2) {
               ctx.fillStyle = `hsl(${baseHue}, 85%, 38%)`;
@@ -497,34 +568,33 @@
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
 
-              // ヒットしたらhp減らす
               blk.hp -= 1;
 
-              // 反射（貫通中は反射しない）
               if (!pierceOn) b.dy = -b.dy;
 
               const cx = blk.x + blockWidth/2;
               const cy = blk.y + blockHeight/2;
 
-              // ★ まだ割れてない（hp残り1）：軽い演出
+              // 粒/音量：フィーバー中強化
+              const partForce = feverActive ? 1.7 : 1.25;
+              const gainSoft = feverActive ? 0.10 : 0.06;
+              const gainHard = feverActive ? 0.14 : 0.085;
+
               if (blk.hp >= 1) {
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-                spawnParticles(cx, cy, feverActive ? 18 : 10, feverActive ? 1.25 : 1.0);
+                spawnParticles(cx, cy, feverActive ? 22 : 12, partForce);
                 addShake(3, 5);
 
-                // 音：低め
-                const base = feverActive ? 900 : 780;
-                const freq = Math.min(base + combo * 12, 1500);
-                beep(freq, 0.02, feverActive ? 0.085 : 0.06);
+                const base = feverActive ? 980 : 780;
+                const freq = Math.min(base + combo * 12, 1600);
+                beep(freq, 0.02, gainSoft);
                 buzz(6);
 
-                // スコア/ゲージは入れる（硬いのも気持ちよく）
                 combo += 1;
                 addFever(6);
                 addScore(8);
               }
 
-              // ★ 割れた（hp==0）：強演出
               if (blk.hp <= 0) {
                 blk.status = 0;
 
@@ -533,13 +603,12 @@
                 addScore(12);
 
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-                spawnParticles(cx, cy, feverActive ? 34 : 22, feverActive ? 1.6 : 1.25);
+                spawnParticles(cx, cy, feverActive ? 40 : 26, partForce * 1.1);
                 addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
 
-                // 音：高く＋音量UP
-                const base2 = feverActive ? 1200 : 980;
-                const freq2 = Math.min(base2 + combo * 18, 2000);
-                beep(freq2, 0.03, feverActive ? 0.11 : 0.08);
+                const base2 = feverActive ? 1400 : 980;
+                const freq2 = Math.min(base2 + combo * 18, 2200);
+                beep(freq2, 0.03, gainHard);
                 buzz(feverActive ? 14 : 10);
 
                 maybeDropPowerup(cx, cy);
@@ -547,7 +616,7 @@
                 if (isAllCleared()) {
                   resetBlocks();
                   addShake(10, 14);
-                  beep(1300, 0.06, 0.11);
+                  beep(1300, 0.06, feverActive ? 0.14 : 0.11);
                   toast('NEXT WAVE!');
                 }
               }
@@ -593,6 +662,9 @@
     function updateBalls() {
       updateFever();
 
+      // ★ PIERCE期限が切れたら表示更新
+      if (pierceUntil && performance.now() > pierceUntil) pierceUntil = 0;
+
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
 
@@ -633,7 +705,6 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
-    // ===== Loop =====
     function loop() {
       if (!running || isPaused || isGameOver) return;
 
@@ -648,10 +719,9 @@
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // ★ フィーバー中：背景脈動を少し強め
       if (feverActive) {
         const t = performance.now() * 0.012;
-        const a = 0.08 + (Math.sin(t) * 0.5 + 0.5) * 0.12; // 0.08〜0.20
+        const a = 0.08 + (Math.sin(t) * 0.5 + 0.5) * 0.12;
         ctx.save();
         ctx.fillStyle = `rgba(255,0,127,${a})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -672,6 +742,9 @@
       drawParticles();
 
       ctx.restore();
+
+      // ★ 状態表示更新（毎フレームでOK）
+      updateStatusUI();
 
       requestAnimationFrame(loop);
     }
@@ -695,6 +768,9 @@
       fever = 0;
       feverActive = false;
 
+      wideUntil = 0;
+      pierceUntil = 0;
+
       powerups.length = 0;
       particles.length = 0;
       flashes.length = 0;
@@ -714,6 +790,7 @@
       pauseBtn.style.display = 'block';
       pauseBtn.textContent = '⏸';
 
+      updateStatusUI();
       requestAnimationFrame(loop);
     }
 
@@ -722,7 +799,7 @@
       isGameOver = true;
       pauseBtn.style.display = 'none';
 
-      document.getElementById('final-score').innerText = String(score);
+      finalScoreEl.innerText = String(score);
       showPanel(rankingPanel);
 
       const savedName = localStorage.getItem('playerName');
@@ -796,41 +873,49 @@
       showPanel(startPanel);
     }
 
-    // 操作
+    // ===== 操作：画面どこでも =====
     let isMouseDown = false;
 
     function movePaddleByClientX(clientX) {
-      const rect = touchArea.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect(); // ★ canvas基準にする
       const x = clientX - rect.left;
       const ratio = x / rect.width;
       paddle.x = ratio * canvas.width - paddle.w/2;
       clampPaddle();
     }
 
-    touchArea.addEventListener('touchstart', (e) => {
+    // スマホ：画面どこでもこすってOK（スクロール防止）
+    window.addEventListener('touchstart', (e) => {
+      if (!running || isPaused || isGameOver) return;
       movePaddleByClientX(e.touches[0].clientX);
     }, { passive: true });
 
-    touchArea.addEventListener('touchmove', (e) => {
+    window.addEventListener('touchmove', (e) => {
+      if (!running || isPaused || isGameOver) return;
       e.preventDefault();
       movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
 
-    touchArea.addEventListener('mousedown', (e) => {
+    // PC：押してる間だけ（どこでも）
+    window.addEventListener('mousedown', (e) => {
+      if (!running || isPaused || isGameOver) return;
       ensureAudio();
       isMouseDown = true;
       movePaddleByClientX(e.clientX);
     });
     window.addEventListener('mouseup', () => { isMouseDown = false; });
-    touchArea.addEventListener('mousemove', (e) => {
+    window.addEventListener('mousemove', (e) => {
+      if (!running || isPaused || isGameOver) return;
       if (!isMouseDown) return;
       movePaddleByClientX(e.clientX);
     });
 
+    // ===== Bind =====
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
 
     showPanel(startPanel);
+    updateStatusUI();
   </script>
 </body>
 </html>
