@@ -5,14 +5,43 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BREAKOUT RANKING BATTLE</title>
   <style>
-    :root { --neon-blue: #00d2ff; --neon-pink: #ff007f; --neon-green: #0f0; --glass: rgba(255, 255, 255, 0.05); }
-    body { background: #05050a; color: #fff; font-family: 'Arial Black', sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; overflow: hidden; touch-action: none; }
+    :root {
+      --neon-blue: #00d2ff;
+      --neon-pink: #ff007f;
+      --neon-green: #0f0;
+      --glass: rgba(255, 255, 255, 0.05);
+    }
 
-    .header { margin-top: 18px; text-align: center; position: relative; width: 100%; max-width: 420px; }
-    .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
+    * { box-sizing: border-box; }
 
-    /* パワーアップ状況 */
-    .status-line{
+    body {
+      background: #05050a;
+      color: #fff;
+      font-family: 'Arial Black', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    .header {
+      margin-top: 18px;
+      text-align: center;
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .score-display {
+      font-size: 24px;
+      color: var(--neon-blue);
+      text-shadow: 0 0 10px var(--neon-blue);
+    }
+
+    .status-line {
       margin-top: 8px;
       font-size: 12px;
       color: rgba(255,255,255,0.75);
@@ -23,36 +52,113 @@
       gap:10px;
       flex-wrap: wrap;
     }
-    .badge{
+
+    .badge {
       padding: 3px 8px;
       border-radius: 999px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(255,255,255,0.06);
     }
-    .badge.on{
+
+    .badge.on {
       border-color: rgba(0,210,255,0.6);
       box-shadow: 0 0 10px rgba(0,210,255,0.18);
       color: #fff;
     }
 
-    #game-container { display: flex; flex-direction: column; align-items: center; width: 100%; flex-grow: 1; justify-content: center; position: relative; }
-    canvas { background: #000; border: 3px solid var(--neon-blue); box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); border-radius: 8px; }
+    #game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      flex-grow: 1;
+      justify-content: center;
+      position: relative;
+    }
 
-    .menu-btn { width: 100%; padding: 14px; background: transparent; color: var(--neon-green); border: 2px solid var(--neon-green); border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.25s; }
-    .menu-btn:hover { background: var(--neon-green); color: #000; }
+    canvas {
+      background: #000;
+      border: 3px solid var(--neon-blue);
+      box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+      border-radius: 8px;
+    }
+
+    .menu-btn {
+      width: 100%;
+      padding: 14px;
+      background: transparent;
+      color: var(--neon-green);
+      border: 2px solid var(--neon-green);
+      border-radius: 50px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.25s;
+      font-family: inherit;
+    }
+
+    .menu-btn:hover {
+      background: var(--neon-green);
+      color: #000;
+    }
+
+    .menu-btn.secondary {
+      color: #fff;
+      border-color: rgba(255,255,255,0.22);
+    }
+
+    .menu-btn.secondary:hover {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+
+    .menu-btn.danger {
+      color: #ff7f9f;
+      border-color: rgba(255,0,127,0.45);
+    }
+
+    .menu-btn.danger:hover {
+      background: rgba(255,0,127,0.18);
+      color: #fff;
+    }
 
     .panel {
-      display: none; position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(5, 5, 20, 0.95); border: 2px solid rgba(255,255,255,0.12);
-      padding: 22px; border-radius: 18px; width: 290px; text-align: center; z-index: 1000; backdrop-filter: blur(10px);
+      display: none;
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(5, 5, 20, 0.95);
+      border: 2px solid rgba(255,255,255,0.12);
+      padding: 22px;
+      border-radius: 18px;
+      width: 290px;
+      text-align: center;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      max-height: 78vh;
+      overflow-y: auto;
     }
-    .panel h2 { margin: 0 0 12px; font-size: 18px; letter-spacing: 1px; }
-    .sub { font-size: 12px; color: rgba(255,255,255,0.65); margin: 6px 0 14px; }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+      letter-spacing: 1px;
+    }
+
+    .sub {
+      font-size: 12px;
+      color: rgba(255,255,255,0.65);
+      margin: 6px 0 14px;
+    }
 
     #start-panel { display: block; border-color: rgba(0,210,255,0.35); }
+    #tutorial-panel { border-color: rgba(255,255,255,0.2); }
+    #pause-panel { border-color: rgba(255,255,255,0.18); }
+    #ranking-panel { border-color: rgba(255,0,127,0.55); }
+    #admin-login-panel,
+    #admin-panel { border-color: rgba(255,255,255,0.24); }
 
-    #tutorial-panel{ border-color: rgba(255,255,255,0.2); }
-    .tip{
+    .tip {
       text-align:left;
       font-size: 12px;
       color: rgba(255,255,255,0.78);
@@ -64,7 +170,7 @@
       margin: 10px 0 14px;
     }
 
-    #pause-btn{
+    #pause-btn {
       position: absolute;
       top: 8px;
       right: 10px;
@@ -79,20 +185,198 @@
       display: none;
       user-select: none;
     }
-    #pause-panel{ border-color: rgba(255,255,255,0.18); }
-    #pause-panel .menu-btn{ margin-top: 10px; }
 
-    #ranking-panel { border-color: rgba(255,0,127,0.55); }
-    #name-input { width: 90%; padding: 12px; margin: 14px 0 10px; background: #111; border: 1px solid var(--neon-blue); color: #fff; text-align: center; font-family: inherit; border-radius: 10px; }
+    #pause-panel .menu-btn { margin-top: 10px; }
 
-    .toast {
-      position:absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.15);
-      padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
+    #name-input,
+    #admin-token-input {
+      width: 90%;
+      padding: 12px;
+      margin: 14px 0 10px;
+      background: #111;
+      border: 1px solid var(--neon-blue);
+      color: #fff;
+      text-align: center;
+      font-family: inherit;
+      border-radius: 10px;
     }
 
-    /* 下の操作UIは消す */
-    .controls{ display:none; }
+    .toast {
+      position:absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      color:#fff;
+      z-index: 1200;
+      display:none;
+      max-width: 90vw;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .controls { display:none; }
+
+    .ranking-box {
+      margin-top: 14px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      text-align: left;
+    }
+
+    .ranking-title {
+      text-align: center;
+      font-size: 13px;
+      color: var(--neon-pink);
+      margin-bottom: 8px;
+      letter-spacing: 0.8px;
+    }
+
+    .ranking-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-height: 88px;
+    }
+
+    .rank-row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .rank-num {
+      color: #ffd86b;
+      text-align: center;
+    }
+
+    .rank-name {
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .rank-score {
+      color: var(--neon-blue);
+    }
+
+    .empty-note {
+      font-size: 12px;
+      text-align: center;
+      color: rgba(255,255,255,0.55);
+      padding: 16px 0;
+    }
+
+    .start-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .admin-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+      text-align: left;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .admin-row {
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .admin-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .admin-name {
+      font-size: 13px;
+      color: #fff;
+      word-break: break-all;
+    }
+
+    .admin-score {
+      font-size: 13px;
+      color: var(--neon-blue);
+      white-space: nowrap;
+    }
+
+    .admin-meta {
+      font-size: 10px;
+      color: rgba(255,255,255,0.55);
+      margin-bottom: 8px;
+      word-break: break-all;
+    }
+
+    .small-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .small-btn {
+      flex: 1;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: transparent;
+      color: #fff;
+      font-size: 11px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .small-btn.delete {
+      border-color: rgba(255,0,127,0.45);
+      color: #ff9fbc;
+    }
+
+    .small-btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    .admin-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .admin-top-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (max-height: 760px) {
+      .panel {
+        top: 50%;
+        max-height: 82vh;
+      }
+    }
   </style>
 </head>
 <body>
@@ -115,8 +399,21 @@
     <div id="start-panel" class="panel">
       <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
       <div class="sub">Tap START to play</div>
-      <button class="menu-btn" id="start-btn">START</button>
+
+      <div class="start-actions">
+        <button class="menu-btn" id="start-btn">START</button>
+        <button class="menu-btn secondary" id="refresh-ranking-btn">RANKING REFRESH</button>
+        <button class="menu-btn secondary" id="open-admin-btn">ADMIN</button>
+      </div>
+
       <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10</div>
+
+      <div class="ranking-box">
+        <div class="ranking-title">TOP 5 RANKING</div>
+        <div class="ranking-list" id="ranking-list">
+          <div class="empty-note">Loading...</div>
+        </div>
+      </div>
     </div>
 
     <div id="tutorial-panel" class="panel">
@@ -143,12 +440,39 @@
       <div class="sub">Your score: <span id="final-score">0</span></div>
       <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
       <button class="menu-btn" id="submit-btn">SUBMIT</button>
+      <button class="menu-btn secondary" id="cancel-submit-btn" style="margin-top:10px;">BACK TO START</button>
+    </div>
+
+    <div id="admin-login-panel" class="panel">
+      <h2 style="color:#fff;">ADMIN LOGIN</h2>
+      <div class="sub">Bearer token を入力</div>
+      <input type="password" id="admin-token-input" placeholder="ADMIN TOKEN">
+      <button class="menu-btn" id="admin-login-btn">LOGIN</button>
+      <button class="menu-btn secondary" id="admin-login-back-btn" style="margin-top:10px;">BACK</button>
+    </div>
+
+    <div id="admin-panel" class="panel">
+      <h2 style="color:#fff;">ADMIN PANEL</h2>
+      <div class="sub">スコア管理</div>
+
+      <div class="admin-top-actions">
+        <button class="menu-btn secondary" id="admin-refresh-btn">REFRESH LIST</button>
+        <button class="menu-btn danger" id="admin-delete-all-btn">DELETE ALL</button>
+      </div>
+
+      <div class="admin-list" id="admin-list">
+        <div class="empty-note">Loading...</div>
+      </div>
+
+      <div class="admin-actions">
+        <button class="menu-btn secondary" id="admin-logout-btn">LOGOUT</button>
+        <button class="menu-btn secondary" id="admin-back-btn">BACK TO START</button>
+      </div>
     </div>
 
     <div class="toast" id="toast"></div>
   </div>
 
-  <!-- controls は残しても display:none -->
   <div class="controls">
     <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
   </div>
@@ -162,7 +486,6 @@
     const scoreEl = document.getElementById('score');
     const toastEl = document.getElementById('toast');
 
-    // 状態表示
     const stWide = document.getElementById('st-wide');
     const stPierce = document.getElementById('st-pierce');
     const stMulti = document.getElementById('st-multi');
@@ -171,6 +494,8 @@
 
     const startPanel = document.getElementById('start-panel');
     const startBtn = document.getElementById('start-btn');
+    const refreshRankingBtn = document.getElementById('refresh-ranking-btn');
+    const openAdminBtn = document.getElementById('open-admin-btn');
 
     const tutorialPanel = document.getElementById('tutorial-panel');
     const tutorialOkBtn = document.getElementById('tutorial-ok-btn');
@@ -183,17 +508,255 @@
     const finalScoreEl = document.getElementById('final-score');
     const nameInput = document.getElementById('name-input');
     const submitBtn = document.getElementById('submit-btn');
+    const cancelSubmitBtn = document.getElementById('cancel-submit-btn');
+
+    const rankingListEl = document.getElementById('ranking-list');
+
+    const adminLoginPanel = document.getElementById('admin-login-panel');
+    const adminPanel = document.getElementById('admin-panel');
+    const adminTokenInput = document.getElementById('admin-token-input');
+    const adminLoginBtn = document.getElementById('admin-login-btn');
+    const adminLoginBackBtn = document.getElementById('admin-login-back-btn');
+    const adminRefreshBtn = document.getElementById('admin-refresh-btn');
+    const adminDeleteAllBtn = document.getElementById('admin-delete-all-btn');
+    const adminLogoutBtn = document.getElementById('admin-logout-btn');
+    const adminBackBtn = document.getElementById('admin-back-btn');
+    const adminListEl = document.getElementById('admin-list');
+
+    let adminToken = localStorage.getItem('adminToken') || '';
 
     function toast(msg) {
       toastEl.textContent = msg;
       toastEl.style.display = 'block';
       clearTimeout(toastEl._t);
-      toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1000);
+      toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1200);
+    }
+
+    function formatDate(dateStr) {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '-';
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${y}/${m}/${day} ${hh}:${mm}`;
+    }
+
+    // ===== ランキング表示 =====
+    async function fetchRanking() {
+      rankingListEl.innerHTML = '<div class="empty-note">Loading...</div>';
+
+      try {
+        const res = await fetch(`${SERVER_URL}/api/ranking`, { cache: 'no-store' });
+        const list = await res.json();
+
+        if (!Array.isArray(list) || list.length === 0) {
+          rankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
+          return;
+        }
+
+        rankingListEl.innerHTML = list.map((item, idx) => {
+          const name = String(item.name || 'PLAYER');
+          const score = Number(item.score || 0);
+          return `
+            <div class="rank-row">
+              <div class="rank-num">${idx + 1}</div>
+              <div class="rank-name">${escapeHtml(name)}</div>
+              <div class="rank-score">${score}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        rankingListEl.innerHTML = '<div class="empty-note">取得失敗</div>';
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    // ===== 管理機能 =====
+    function getAdminHeaders() {
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      };
+    }
+
+    async function adminCheckLogin() {
+      if (!adminToken) return false;
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/check`, {
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+        return res.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function adminLogin() {
+      const token = adminTokenInput.value.trim();
+      if (!token) {
+        toast('TOKENを入力してください');
+        return;
+      }
+
+      adminLoginBtn.disabled = true;
+      adminLoginBtn.textContent = 'CHECKING...';
+
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/check`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          toast('ログイン失敗');
+          return;
+        }
+
+        adminToken = token;
+        localStorage.setItem('adminToken', adminToken);
+        toast('ADMIN LOGIN OK');
+        showPanel(adminPanel);
+        await fetchAdminScores();
+      } catch (e) {
+        toast('通信失敗');
+      } finally {
+        adminLoginBtn.disabled = false;
+        adminLoginBtn.textContent = 'LOGIN';
+      }
+    }
+
+    async function fetchAdminScores() {
+      adminListEl.innerHTML = '<div class="empty-note">Loading...</div>';
+
+      if (!adminToken) {
+        adminListEl.innerHTML = '<div class="empty-note">未ログイン</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/scores`, {
+          headers: { 'Authorization': `Bearer ${adminToken}` },
+          cache: 'no-store'
+        });
+
+        if (res.status === 401) {
+          toast('認証切れ');
+          adminLogout();
+          return;
+        }
+
+        if (!res.ok) {
+          adminListEl.innerHTML = '<div class="empty-note">取得失敗</div>';
+          return;
+        }
+
+        const list = await res.json();
+
+        if (!Array.isArray(list) || list.length === 0) {
+          adminListEl.innerHTML = '<div class="empty-note">データがありません</div>';
+          return;
+        }
+
+        adminListEl.innerHTML = list.map(item => {
+          const id = String(item._id || '');
+          const name = escapeHtml(item.name || 'PLAYER');
+          const score = Number(item.score || 0);
+          const date = formatDate(item.date);
+          return `
+            <div class="admin-row">
+              <div class="admin-main">
+                <div class="admin-name">${name}</div>
+                <div class="admin-score">${score}</div>
+              </div>
+              <div class="admin-meta">ID: ${escapeHtml(id)}<br>DATE: ${escapeHtml(date)}</div>
+              <div class="small-btn-row">
+                <button class="small-btn delete" data-delete-id="${escapeHtml(id)}">DELETE</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        adminListEl.innerHTML = '<div class="empty-note">通信失敗</div>';
+      }
+    }
+
+    async function deleteAdminScore(id) {
+      if (!id) return;
+      const ok = confirm('この1件を削除しますか？');
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/score/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+
+        if (res.status === 401) {
+          toast('認証切れ');
+          adminLogout();
+          return;
+        }
+
+        if (!res.ok) {
+          toast('削除失敗');
+          return;
+        }
+
+        toast('1件削除しました');
+        await fetchAdminScores();
+        await fetchRanking();
+      } catch (e) {
+        toast('通信失敗');
+      }
+    }
+
+    async function deleteAllScores() {
+      const ok = confirm('本当に全件削除しますか？');
+      if (!ok) return;
+
+      try {
+        const res = await fetch(`${SERVER_URL}/api/admin/scores?confirm=YES`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${adminToken}` }
+        });
+
+        if (res.status === 401) {
+          toast('認証切れ');
+          adminLogout();
+          return;
+        }
+
+        if (!res.ok) {
+          toast('全削除失敗');
+          return;
+        }
+
+        toast('全件削除しました');
+        await fetchAdminScores();
+        await fetchRanking();
+      } catch (e) {
+        toast('通信失敗');
+      }
+    }
+
+    function adminLogout() {
+      adminToken = '';
+      localStorage.removeItem('adminToken');
+      adminTokenInput.value = '';
+      showPanel(startPanel);
     }
 
     // ===== ループ稼ぎ減衰 =====
-    // 直近の破壊履歴（時間と列）を記録して、同じ列/短時間連打の得点を下げる
-    const hitHistory = []; // {t, c}
+    const hitHistory = [];
     const LOOP_WINDOW_MS = 1200;
     const SAME_COL_THRESHOLD = 3;
     const TOTAL_HITS_THRESHOLD = 6;
@@ -201,7 +764,6 @@
     function loopPenaltyMultiplier(colIndex) {
       const now = performance.now();
 
-      // 古い履歴を削除
       while (hitHistory.length && now - hitHistory[0].t > LOOP_WINDOW_MS) {
         hitHistory.shift();
       }
@@ -209,7 +771,6 @@
       const total = hitHistory.length;
       const sameCol = hitHistory.filter(h => h.c === colIndex).length;
 
-      // ペナルティ（0.35〜1.0）
       let mul = 1.0;
 
       if (sameCol >= SAME_COL_THRESHOLD) mul *= 0.65;
@@ -220,7 +781,6 @@
 
       mul = Math.max(0.35, mul);
 
-      // 今回を履歴に追加
       hitHistory.push({ t: now, c: colIndex });
 
       return mul;
@@ -290,7 +850,7 @@
       ctx.restore();
     }
 
-    // WebAudio
+    // ===== WebAudio =====
     let audioCtx = null;
     function ensureAudio() {
       try {
@@ -298,6 +858,7 @@
         if (audioCtx.state === 'suspended') audioCtx.resume();
       } catch (e) {}
     }
+
     function beep(freq = 800, dur = 0.03, gain = 0.06) {
       try {
         ensureAudio();
@@ -307,11 +868,13 @@
         o.type = "square";
         o.frequency.value = freq;
         g.gain.value = gain;
-        o.connect(g); g.connect(audioCtx.destination);
+        o.connect(g);
+        g.connect(audioCtx.destination);
         o.start();
         o.stop(audioCtx.currentTime + dur);
       } catch (e) {}
     }
+
     function buzz(ms = 10) {
       if (navigator.vibrate) navigator.vibrate(ms);
     }
@@ -333,15 +896,18 @@
     const FEVER_DURATION_MS = 8000;
     const FEVER_MULT = 2.0;
 
-    // パワーアップ状態（表示用）
     let wideUntil = 0;
     let pierceUntil = 0;
 
-    // Paddle
     const paddleBaseW = 60;
-    const paddle = { x: (canvas.width - paddleBaseW)/2, y: canvas.height - 25, w: paddleBaseW, h: 10, color: '#00d2ff' };
+    const paddle = {
+      x: (canvas.width - paddleBaseW)/2,
+      y: canvas.height - 25,
+      w: paddleBaseW,
+      h: 10,
+      color: '#00d2ff'
+    };
 
-    // Ball
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
     const BALL_R_MIN = 10;
@@ -368,7 +934,6 @@
       syncBallRadius();
     }
 
-    // Blocks with HP
     const blockRowCount = 6;
     const blockColumnCount = 8;
     const blockHeight = 16;
@@ -378,37 +943,42 @@
     const blockWidth = Math.floor((canvas.width - blockOffsetLeft*2 - blockPadding*(blockColumnCount-1)) / blockColumnCount);
 
     let blocks = [];
+
     function initBlocks() {
       blocks = [];
-      for(let c=0; c<blockColumnCount; c++) {
+      for (let c = 0; c < blockColumnCount; c++) {
         blocks[c] = [];
-        for(let r=0; r<blockRowCount; r++) {
+        for (let r = 0; r < blockRowCount; r++) {
           const hard = Math.random() < 0.22;
           const hp = hard ? 2 : 1;
           blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
         }
       }
     }
+
     initBlocks();
 
     function resetBlocks() {
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) {
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
           const hard = Math.random() < 0.22;
           blocks[c][r].hp = hard ? 2 : 1;
           blocks[c][r].status = 1;
         }
       }
-      // 新しい面に入ったら履歴クリア（同じ列ペナルティ持ち越し防止）
       hitHistory.length = 0;
     }
 
     function isAllCleared() {
-      for (let c=0; c<blockColumnCount; c++) for (let r=0; r<blockRowCount; r++) if (blocks[c][r].status === 1) return false;
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
+          if (blocks[c][r].status === 1) return false;
+        }
+      }
       return true;
     }
 
-    // Powerups
+    // ===== Powerups =====
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -464,7 +1034,6 @@
         addShake(2, 4);
         beep(520, 0.02, 0.05);
 
-        // 最後に取った分だけ延長するため、期限差分でタイマーを張り直す
         wideTimer = setTimeout(() => {
           paddle.w = paddleBaseW;
           clampPaddle();
@@ -544,10 +1113,10 @@
     }
 
     function drawBlocks() {
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) {
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
           const blk = blocks[c][r];
-          if(blk.status === 1) {
+          if (blk.status === 1) {
             const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
             const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
             blk.x = bx;
@@ -597,31 +1166,28 @@
       if (b.y < b.r) b.y = b.r;
     }
 
-    // ===== Collision with HP + Loop Penalty =====
+    // ===== Collision =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
-      for(let c=0; c<blockColumnCount; c++) {
-        for(let r=0; r<blockRowCount; r++) {
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
           const blk = blocks[c][r];
-          if(blk.status === 1) {
-            if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-
-              // ★ 同じ列/短時間連打の減衰係数（この列cで計算）
+          if (blk.status === 1) {
+            if (b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
               const mul = loopPenaltyMultiplier(c);
 
               blk.hp -= 1;
 
               if (!pierceOn) b.dy = -b.dy;
 
-              const cx = blk.x + blockWidth/2;
-              const cy = blk.y + blockHeight/2;
+              const cx = blk.x + blockWidth / 2;
+              const cy = blk.y + blockHeight / 2;
 
               const partForce = feverActive ? 1.7 : 1.25;
               const gainSoft = feverActive ? 0.10 : 0.06;
               const gainHard = feverActive ? 0.14 : 0.085;
 
-              // まだ割れてない（hp残り1）
               if (blk.hp >= 1) {
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
                 spawnParticles(cx, cy, feverActive ? 22 : 12, partForce);
@@ -635,18 +1201,15 @@
                 combo += 1;
                 addFever(6);
 
-                // ★減衰適用（最低1点）
                 addScore(Math.max(1, Math.floor(8 * mul)));
               }
 
-              // 割れた（hp==0）
               if (blk.hp <= 0) {
                 blk.status = 0;
 
                 combo += 1;
                 addFever(8);
 
-                // ★減衰適用（最低1点）
                 addScore(Math.max(1, Math.floor(12 * mul)));
 
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
@@ -678,13 +1241,19 @@
         const p = powerups[i];
         p.y += p.vy;
 
-        const hit = (p.y >= paddle.y - 10 && p.y <= paddle.y + paddle.h + 10 &&
-                     p.x >= paddle.x && p.x <= paddle.x + paddle.w);
+        const hit = (
+          p.y >= paddle.y - 10 &&
+          p.y <= paddle.y + paddle.h + 10 &&
+          p.x >= paddle.x &&
+          p.x <= paddle.x + paddle.w
+        );
+
         if (hit) {
           applyPower(p.type);
           powerups.splice(i, 1);
           continue;
         }
+
         if (p.y > canvas.height + 20) powerups.splice(i, 1);
       }
     }
@@ -719,14 +1288,21 @@
         let nx = b.x + b.dx;
         let ny = b.y + b.dy;
 
-        if (nx > canvas.width - b.r) { b.dx = -Math.abs(b.dx); nx = canvas.width - b.r; }
-        else if (nx < b.r) { b.dx = Math.abs(b.dx); nx = b.r; }
+        if (nx > canvas.width - b.r) {
+          b.dx = -Math.abs(b.dx);
+          nx = canvas.width - b.r;
+        } else if (nx < b.r) {
+          b.dx = Math.abs(b.dx);
+          nx = b.r;
+        }
 
-        if (ny < b.r) { b.dy = Math.abs(b.dy); ny = b.r; }
+        if (ny < b.r) {
+          b.dy = Math.abs(b.dy);
+          ny = b.r;
+        }
 
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
-            // ===== B: 角度制限（横ハメ防止）=====
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
             const MAX_DX = 3.2;
             const MIN_DY = 2.6;
@@ -764,6 +1340,7 @@
       if (!running || isPaused || isGameOver) return;
 
       ctx.save();
+
       if (shakeTime > 0) {
         const dx = (Math.random() * 2 - 1) * shakePower;
         const dy = (Math.random() * 2 - 1) * shakePower;
@@ -808,6 +1385,8 @@
       tutorialPanel.style.display = 'none';
       pausePanel.style.display = 'none';
       rankingPanel.style.display = 'none';
+      adminLoginPanel.style.display = 'none';
+      adminPanel.style.display = 'none';
       if (panelEl) panelEl.style.display = 'block';
     }
 
@@ -832,7 +1411,7 @@
       initBlocks();
 
       paddle.w = paddleBaseW;
-      paddle.x = (canvas.width - paddle.w)/2;
+      paddle.x = (canvas.width - paddle.w) / 2;
 
       resetToSingleBall();
       scoreEl.innerText = '0';
@@ -866,6 +1445,7 @@
       pauseBtn.textContent = '▶';
       showPanel(pausePanel);
     }
+
     function resumeGame() {
       if (!running || isGameOver) return;
       isPaused = false;
@@ -873,12 +1453,14 @@
       showPanel(null);
       requestAnimationFrame(loop);
     }
+
     function restartFromPause() {
       running = false;
       isPaused = false;
       isGameOver = false;
       pauseBtn.style.display = 'none';
       showPanel(startPanel);
+      fetchRanking();
     }
 
     pauseBtn.addEventListener('click', () => {
@@ -886,18 +1468,29 @@
       if (isPaused) resumeGame();
       else pauseGame();
     });
+
     resumeBtn.addEventListener('click', resumeGame);
     restartBtn.addEventListener('click', restartFromPause);
 
-    function shouldShowTutorial() { return localStorage.getItem('tutorialSeen') !== '1'; }
-    function markTutorialSeen() { localStorage.setItem('tutorialSeen', '1'); }
+    function shouldShowTutorial() {
+      return localStorage.getItem('tutorialSeen') !== '1';
+    }
+
+    function markTutorialSeen() {
+      localStorage.setItem('tutorialSeen', '1');
+    }
 
     function onStartPressed() {
       ensureAudio();
       beep(660, 0.03, 0.06);
-      if (shouldShowTutorial()) showPanel(tutorialPanel);
-      else { showPanel(null); startGame(); }
+      if (shouldShowTutorial()) {
+        showPanel(tutorialPanel);
+      } else {
+        showPanel(null);
+        startGame();
+      }
     }
+
     tutorialOkBtn.addEventListener('click', () => {
       ensureAudio();
       beep(720, 0.03, 0.06);
@@ -919,11 +1512,20 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, score })
         });
-      } catch (e) {}
+        toast('SCORE SAVED');
+      } catch (e) {
+        toast('SAVE FAILED');
+      }
 
       submitBtn.disabled = false;
       submitBtn.textContent = 'SUBMIT';
 
+      await fetchRanking();
+      showPanel(startPanel);
+    }
+
+    function backToStartFromGameOver() {
+      fetchRanking();
       showPanel(startPanel);
     }
 
@@ -934,7 +1536,7 @@
       const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
       const ratio = x / rect.width;
-      paddle.x = ratio * canvas.width - paddle.w/2;
+      paddle.x = ratio * canvas.width - paddle.w / 2;
       clampPaddle();
     }
 
@@ -955,19 +1557,74 @@
       isMouseDown = true;
       movePaddleByClientX(e.clientX);
     });
-    window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+    window.addEventListener('mouseup', () => {
+      isMouseDown = false;
+    });
+
     window.addEventListener('mousemove', (e) => {
       if (!running || isPaused || isGameOver) return;
       if (!isMouseDown) return;
       movePaddleByClientX(e.clientX);
     });
 
-    // ===== Bind =====
+    // ===== ボタン bind =====
     startBtn.addEventListener('click', onStartPressed);
     submitBtn.addEventListener('click', submitScore);
+    cancelSubmitBtn.addEventListener('click', backToStartFromGameOver);
 
+    refreshRankingBtn.addEventListener('click', async () => {
+      await fetchRanking();
+      toast('RANKING UPDATED');
+    });
+
+    openAdminBtn.addEventListener('click', async () => {
+      if (adminToken) {
+        const ok = await adminCheckLogin();
+        if (ok) {
+          showPanel(adminPanel);
+          fetchAdminScores();
+          return;
+        }
+      }
+      adminTokenInput.value = adminToken || '';
+      showPanel(adminLoginPanel);
+    });
+
+    adminLoginBtn.addEventListener('click', adminLogin);
+    adminLoginBackBtn.addEventListener('click', () => showPanel(startPanel));
+
+    adminRefreshBtn.addEventListener('click', async () => {
+      await fetchAdminScores();
+      toast('LIST UPDATED');
+    });
+
+    adminDeleteAllBtn.addEventListener('click', deleteAllScores);
+    adminLogoutBtn.addEventListener('click', () => {
+      adminLogout();
+      toast('LOGOUT');
+    });
+
+    adminBackBtn.addEventListener('click', async () => {
+      await fetchRanking();
+      showPanel(startPanel);
+    });
+
+    adminListEl.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-delete-id]');
+      if (!btn) return;
+      const id = btn.getAttribute('data-delete-id');
+      await deleteAdminScore(id);
+    });
+
+    adminTokenInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') adminLogin();
+    });
+
+    // ===== 初期表示 =====
     showPanel(startPanel);
     updateStatusUI();
+    fetchRanking();
   </script>
 </body>
 </html>
