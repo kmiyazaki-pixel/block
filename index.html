@@ -11,7 +11,7 @@
     .header { margin-top: 18px; text-align: center; position: relative; width: 100%; max-width: 420px; }
     .score-display { font-size: 24px; color: var(--neon-blue); text-shadow: 0 0 10px var(--neon-blue); }
 
-    /* ★ パワーアップ状況 */
+    /* パワーアップ状況 */
     .status-line{
       margin-top: 8px;
       font-size: 12px;
@@ -91,7 +91,7 @@
       padding: 8px 12px; border-radius: 999px; font-size: 12px; color:#fff; z-index: 1200; display:none;
     }
 
-    /* ★ 下の操作UIは消す */
+    /* 下の操作UIは消す */
     .controls{ display:none; }
   </style>
 </head>
@@ -100,7 +100,6 @@
   <div class="header">
     <div class="score-display">SCORE: <span id="score">0</span></div>
 
-    <!-- ★ 状態表示 -->
     <div class="status-line" id="status-line">
       <span class="badge" id="st-wide">WIDE</span>
       <span class="badge" id="st-pierce">PIERCE</span>
@@ -125,7 +124,7 @@
       <div class="tip">
         ・画面どこをこすっても操作できる（PCは押しながら）<br>
         ・硬いブロックは2回で割れる（割れた時が最高）<br>
-        ・連続破壊でCOMBO（スコアUP）<br>
+        ・同じ場所ばかり壊すと得点が下がる（ハメ対策）<br>
         ・FEVERでスコア2倍（一定数壊すと発動）<br>
         ・W/M/P はパワーアップ（上に状態が出る）
       </div>
@@ -149,7 +148,7 @@
     <div class="toast" id="toast"></div>
   </div>
 
-  <!-- controls は残しても display:none で見えない -->
+  <!-- controls は残しても display:none -->
   <div class="controls">
     <div class="touch-area" id="touch-control">DRAG TO MOVE</div>
   </div>
@@ -190,6 +189,41 @@
       toastEl.style.display = 'block';
       clearTimeout(toastEl._t);
       toastEl._t = setTimeout(() => toastEl.style.display = 'none', 1000);
+    }
+
+    // ===== ループ稼ぎ減衰 =====
+    // 直近の破壊履歴（時間と列）を記録して、同じ列/短時間連打の得点を下げる
+    const hitHistory = []; // {t, c}
+    const LOOP_WINDOW_MS = 1200;
+    const SAME_COL_THRESHOLD = 3;
+    const TOTAL_HITS_THRESHOLD = 6;
+
+    function loopPenaltyMultiplier(colIndex) {
+      const now = performance.now();
+
+      // 古い履歴を削除
+      while (hitHistory.length && now - hitHistory[0].t > LOOP_WINDOW_MS) {
+        hitHistory.shift();
+      }
+
+      const total = hitHistory.length;
+      const sameCol = hitHistory.filter(h => h.c === colIndex).length;
+
+      // ペナルティ（0.35〜1.0）
+      let mul = 1.0;
+
+      if (sameCol >= SAME_COL_THRESHOLD) mul *= 0.65;
+      if (sameCol >= SAME_COL_THRESHOLD + 1) mul *= 0.75;
+
+      if (total >= TOTAL_HITS_THRESHOLD) mul *= 0.7;
+      if (total >= TOTAL_HITS_THRESHOLD + 2) mul *= 0.7;
+
+      mul = Math.max(0.35, mul);
+
+      // 今回を履歴に追加
+      hitHistory.push({ t: now, c: colIndex });
+
+      return mul;
     }
 
     // ===== エフェクト =====
@@ -300,36 +334,8 @@
     const FEVER_MULT = 2.0;
 
     // パワーアップ状態（表示用）
-    let wideUntil = 0;   // performance.now() の期限
-    let pierceUntil = 0; // performance.now() の期限
-
-    function updateStatusUI() {
-      const now = performance.now();
-
-      // WIDE
-      const wLeft = Math.max(0, wideUntil - now);
-      if (wLeft > 0) {
-        stWide.classList.add('on');
-        stWide.textContent = `WIDE ${(wLeft/1000).toFixed(1)}s`;
-      } else {
-        stWide.classList.remove('on');
-        stWide.textContent = 'WIDE';
-      }
-
-      // PIERCE
-      const pLeft = Math.max(0, pierceUntil - now);
-      if (pLeft > 0) {
-        stPierce.classList.add('on');
-        stPierce.textContent = `PIERCE ${(pLeft/1000).toFixed(1)}s`;
-      } else {
-        stPierce.classList.remove('on');
-        stPierce.textContent = 'PIERCE';
-      }
-
-      // MULTI
-      stMulti.classList.toggle('on', balls.length > 1);
-      stMulti.textContent = `MULTI x${balls.length}`;
-    }
+    let wideUntil = 0;
+    let pierceUntil = 0;
 
     // Paddle
     const paddleBaseW = 60;
@@ -393,6 +399,8 @@
           blocks[c][r].status = 1;
         }
       }
+      // 新しい面に入ったら履歴クリア（同じ列ペナルティ持ち越し防止）
+      hitHistory.length = 0;
     }
 
     function isAllCleared() {
@@ -420,17 +428,48 @@
     const WIDE_MS = 8000;
     const PIERCE_MS = 6000;
 
+    function updateStatusUI() {
+      const now = performance.now();
+
+      const wLeft = Math.max(0, wideUntil - now);
+      if (wLeft > 0) {
+        stWide.classList.add('on');
+        stWide.textContent = `WIDE ${(wLeft/1000).toFixed(1)}s`;
+      } else {
+        stWide.classList.remove('on');
+        stWide.textContent = 'WIDE';
+      }
+
+      const pLeft = Math.max(0, pierceUntil - now);
+      if (pLeft > 0) {
+        stPierce.classList.add('on');
+        stPierce.textContent = `PIERCE ${(pLeft/1000).toFixed(1)}s`;
+      } else {
+        stPierce.classList.remove('on');
+        stPierce.textContent = 'PIERCE';
+      }
+
+      stMulti.classList.toggle('on', balls.length > 1);
+      stMulti.textContent = `MULTI x${balls.length}`;
+    }
+
     function applyPower(type) {
       const now = performance.now();
 
       if (type === PowerType.WIDE) {
         clearTimeout(wideTimer);
         paddle.w = Math.min(paddleBaseW * 1.8, 110);
-        wideUntil = Math.max(wideUntil, now + WIDE_MS); // ★期限を更新
+        wideUntil = Math.max(wideUntil, now + WIDE_MS);
         toast('POWER: WIDE');
         addShake(2, 4);
         beep(520, 0.02, 0.05);
-        wideTimer = setTimeout(() => { paddle.w = paddleBaseW; clampPaddle(); wideUntil = 0; }, WIDE_MS);
+
+        // 最後に取った分だけ延長するため、期限差分でタイマーを張り直す
+        wideTimer = setTimeout(() => {
+          paddle.w = paddleBaseW;
+          clampPaddle();
+          wideUntil = 0;
+        }, Math.max(0, wideUntil - performance.now()));
       }
 
       if (type === PowerType.MULTI) {
@@ -447,7 +486,7 @@
         toast('POWER: PIERCE');
         addShake(3, 6);
         beep(760, 0.03, 0.06);
-        pierceUntil = Math.max(pierceUntil, now + PIERCE_MS); // ★期限を更新
+        pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
       }
 
@@ -558,7 +597,7 @@
       if (b.y < b.r) b.y = b.r;
     }
 
-    // ===== Collision with HP =====
+    // ===== Collision with HP + Loop Penalty =====
     function collisionDetectionForBall(b) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -568,6 +607,9 @@
           if(blk.status === 1) {
             if(b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
 
+              // ★ 同じ列/短時間連打の減衰係数（この列cで計算）
+              const mul = loopPenaltyMultiplier(c);
+
               blk.hp -= 1;
 
               if (!pierceOn) b.dy = -b.dy;
@@ -575,11 +617,11 @@
               const cx = blk.x + blockWidth/2;
               const cy = blk.y + blockHeight/2;
 
-              // 粒/音量：フィーバー中強化
               const partForce = feverActive ? 1.7 : 1.25;
               const gainSoft = feverActive ? 0.10 : 0.06;
               const gainHard = feverActive ? 0.14 : 0.085;
 
+              // まだ割れてない（hp残り1）
               if (blk.hp >= 1) {
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
                 spawnParticles(cx, cy, feverActive ? 22 : 12, partForce);
@@ -592,15 +634,20 @@
 
                 combo += 1;
                 addFever(6);
-                addScore(8);
+
+                // ★減衰適用（最低1点）
+                addScore(Math.max(1, Math.floor(8 * mul)));
               }
 
+              // 割れた（hp==0）
               if (blk.hp <= 0) {
                 blk.status = 0;
 
                 combo += 1;
                 addFever(8);
-                addScore(12);
+
+                // ★減衰適用（最低1点）
+                addScore(Math.max(1, Math.floor(12 * mul)));
 
                 spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
                 spawnParticles(cx, cy, feverActive ? 40 : 26, partForce * 1.1);
@@ -662,8 +709,9 @@
     function updateBalls() {
       updateFever();
 
-      // ★ PIERCE期限が切れたら表示更新
-      if (pierceUntil && performance.now() > pierceUntil) pierceUntil = 0;
+      const now = performance.now();
+      if (pierceUntil && now > pierceUntil) pierceUntil = 0;
+      if (wideUntil && now > wideUntil) wideUntil = 0;
 
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
@@ -678,9 +726,16 @@
 
         if (ny > paddle.y - b.r) {
           if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
-            b.dy = -Math.abs(b.dy);
+            // ===== B: 角度制限（横ハメ防止）=====
             const hitPos = (b.x - (paddle.x + paddle.w/2)) / (paddle.w/2);
-            b.dx = hitPos * 4;
+            const MAX_DX = 3.2;
+            const MIN_DY = 2.6;
+
+            let ndx = hitPos * MAX_DX;
+            ndx = Math.max(-MAX_DX, Math.min(MAX_DX, ndx));
+            b.dx = ndx;
+
+            b.dy = -Math.max(MIN_DY, Math.abs(b.dy));
 
             combo = 0;
             comboMul = 1.0;
@@ -743,9 +798,7 @@
 
       ctx.restore();
 
-      // ★ 状態表示更新（毎フレームでOK）
       updateStatusUI();
-
       requestAnimationFrame(loop);
     }
 
@@ -771,6 +824,7 @@
       wideUntil = 0;
       pierceUntil = 0;
 
+      hitHistory.length = 0;
       powerups.length = 0;
       particles.length = 0;
       flashes.length = 0;
@@ -877,14 +931,13 @@
     let isMouseDown = false;
 
     function movePaddleByClientX(clientX) {
-      const rect = canvas.getBoundingClientRect(); // ★ canvas基準にする
+      const rect = canvas.getBoundingClientRect();
       const x = clientX - rect.left;
       const ratio = x / rect.width;
       paddle.x = ratio * canvas.width - paddle.w/2;
       clampPaddle();
     }
 
-    // スマホ：画面どこでもこすってOK（スクロール防止）
     window.addEventListener('touchstart', (e) => {
       if (!running || isPaused || isGameOver) return;
       movePaddleByClientX(e.touches[0].clientX);
@@ -896,7 +949,6 @@
       movePaddleByClientX(e.touches[0].clientX);
     }, { passive: false });
 
-    // PC：押してる間だけ（どこでも）
     window.addEventListener('mousedown', (e) => {
       if (!running || isPaused || isGameOver) return;
       ensureAudio();
