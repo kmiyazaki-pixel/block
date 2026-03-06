@@ -221,12 +221,12 @@
     .tip {
       text-align: left;
       font-size: 12px;
-      color: rgba(255,255,255,0.8);
-      line-height: 1.55;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.65;
       background: rgba(255,255,255,0.04);
       border: 1px solid rgba(255,255,255,0.08);
       border-radius: 12px;
-      padding: 10px;
+      padding: 12px;
       margin: 10px 0 14px;
     }
 
@@ -489,14 +489,32 @@
     </div>
 
     <div id="tutorial-panel" class="panel">
-      <h2 style="color:#fff;">遊び方</h2>
+      <h2 style="color:#fff;">はじめての遊び方</h2>
       <div class="tip">
-        ・画面どこをこすっても操作できる（PCは押しながら）<br>
-        ・ブロック全消しでWAVE進行、速度は上昇<br>
-        ・硬いブロックは2回で破壊<br>
-        ・waveが進むほど硬いブロック率も少し上がる<br>
-        ・ミサイルは自動チャージ、満タンで自動発射<br>
-        ・ミサイルは範囲爆発
+        【ゲームの目的】<br>
+        ボールを落とさないようにしながら、上にあるブロックを全部こわします。<br>
+        全部こわすと次のWAVEに進み、だんだん速くなります。<br><br>
+
+        【操作方法】<br>
+        ・スマホ：画面をこする<br>
+        ・PC：マウスを押しながら動かす<br><br>
+
+        【基本ルール】<br>
+        ・ボールを落とすとライフが1減る<br>
+        ・ライフが0でゲームオーバー<br>
+        ・硬いブロックは2回当てるとこわせる<br><br>
+
+        【アイテム】<br>
+        ・ワイド：パドルが大きくなる<br>
+        ・マルチ：ボールが増える<br>
+        ・貫通：ボールがブロックを突き抜ける<br><br>
+
+        【オートミサイル】<br>
+        ミサイルゲージが満タンになると自動で発射され、着弾した場所の周りもまとめて攻撃します。<br><br>
+
+        【スコアのコツ】<br>
+        たくさん連続でこわすと高得点になりやすいです。<br>
+        同じ場所ばかり壊していると得点が下がることがあります。
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -1060,405 +1078,6 @@
     function resetToSingleBall() {
       balls = [ makeBall(canvas.width / 2, canvas.height * 0.6, 1, -1.25) ];
       syncBallRadius();
-    }
-
-    function resizeCanvasTall() {
-      const headerRect = headerEl.getBoundingClientRect();
-      const available = window.innerHeight - headerRect.bottom - 12;
-      const h = Math.max(430, Math.min(680, Math.floor(available)));
-      canvas.width = 300;
-      canvas.height = h;
-      paddle.y = canvas.height - 25;
-      clampPaddle();
-      initStars();
-    }
-
-    const blockColumnCount = 8;
-    const blockRowCount = 8;
-    const blockPadding = 4;
-    const blockOffsetTop = 54;
-    const blockOffsetLeft = 10;
-    const blockHeight = 18;
-    const blockWidth = Math.floor((300 - blockOffsetLeft * 2 - blockPadding * (blockColumnCount - 1)) / blockColumnCount);
-
-    let blocks = [];
-
-    function getHardBlockRate() {
-      return Math.min(0.34, 0.16 + (wave - 1) * 0.015);
-    }
-
-    function initBlocks() {
-      blocks = [];
-      const hardRate = getHardBlockRate();
-
-      for (let c = 0; c < blockColumnCount; c++) {
-        blocks[c] = [];
-        for (let r = 0; r < blockRowCount; r++) {
-          const hard = Math.random() < hardRate;
-          const hp = hard ? 2 : 1;
-          blocks[c][r] = { x: 0, y: 0, hp, status: 1 };
-        }
-      }
-    }
-
-    function resetBlocksForNextWave() {
-      wave += 1;
-      waveSpeedBonus = (wave - 1) * WAVE_SPEED_STEP;
-      initBlocks();
-      hitHistory.length = 0;
-      adjustAllBallSpeeds();
-      toast(`WAVE ${wave} / 硬いブロック ${(getHardBlockRate() * 100).toFixed(0)}%`);
-    }
-
-    function isAllCleared() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) {
-          if (blocks[c][r].status === 1) return false;
-        }
-      }
-      return true;
-    }
-
-    const powerups = [];
-    const POWER_CHANCE = 0.18;
-    const POWER_VY = 2.2;
-    const PowerType = { WIDE:'WIDE', MULTI:'MULTI', PIERCE:'PIERCE' };
-
-    function maybeDropPowerup(x, y) {
-      if (Math.random() > POWER_CHANCE) return;
-      const roll = Math.random();
-      let type = PowerType.WIDE;
-      if (roll < 0.50) type = PowerType.WIDE;
-      else if (roll < 0.80) type = PowerType.MULTI;
-      else type = PowerType.PIERCE;
-      powerups.push({ x, y, vy: POWER_VY, type, pulse: Math.random() * Math.PI * 2 });
-    }
-
-    let wideTimer = null;
-    const WIDE_MS = 8000;
-    const PIERCE_MS = 6000;
-
-    function updateStatusUI() {
-      const now = performance.now();
-
-      const wLeft = Math.max(0, wideUntil - now);
-      if (wLeft > 0) {
-        stWide.classList.add('on');
-        stWide.textContent = `ワイド ${(wLeft / 1000).toFixed(1)}秒`;
-      } else {
-        stWide.classList.remove('on');
-        stWide.textContent = 'ワイド';
-      }
-
-      const pLeft = Math.max(0, pierceUntil - now);
-      if (pLeft > 0) {
-        stPierce.classList.add('on');
-        stPierce.textContent = `貫通 ${(pLeft / 1000).toFixed(1)}秒`;
-      } else {
-        stPierce.classList.remove('on');
-        stPierce.textContent = '貫通';
-      }
-
-      stMulti.classList.toggle('on', balls.length > 1);
-      stMulti.textContent = `マルチ x${balls.length}`;
-
-      const pct = Math.max(0, Math.min(100, missileCharge));
-      missileFillEl.style.width = `${pct}%`;
-      missileTextEl.textContent = pct >= 100 ? '発射!' : `${pct.toFixed(0)}%`;
-      missileTextEl.className = pct >= 100 ? 'missile-ready' : '';
-    }
-
-    function applyPower(type) {
-      const now = performance.now();
-
-      if (type === PowerType.WIDE) {
-        clearTimeout(wideTimer);
-        paddle.w = Math.min(paddleBaseW * 1.8, 112);
-        wideUntil = Math.max(wideUntil, now + WIDE_MS);
-        toast('ワイド取得');
-        beep(520, 0.02, 0.05);
-        spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 4);
-
-        wideTimer = setTimeout(() => {
-          paddle.w = paddleBaseW;
-          clampPaddle();
-          wideUntil = 0;
-        }, Math.max(0, wideUntil - performance.now()));
-      }
-
-      if (type === PowerType.MULTI) {
-        toast('マルチ取得');
-        beep(680, 0.03, 0.06);
-        const b = balls[0] || makeBall(canvas.width / 2, canvas.height / 2, 1, -1);
-        balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
-        balls.push(makeBall(b.x, b.y, b.dx * 0.85, -b.dy * 0.85));
-        syncBallRadius();
-        spawnSparkle(b.x, b.y, 4);
-      }
-
-      if (type === PowerType.PIERCE) {
-        toast('貫通取得');
-        beep(760, 0.03, 0.06);
-        pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
-        balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
-        spawnSparkle(canvas.width * 0.5, canvas.height * 0.3, 5);
-      }
-
-      updateStatusUI();
-    }
-
-    function addScore(base) {
-      comboMul = Math.min(1 + combo * 0.08, 2.5);
-      const feverMul = feverActive ? FEVER_MULT : 1.0;
-      const add = Math.floor(base * comboMul * feverMul);
-
-      score += add;
-      scoreEl.innerText = score;
-      syncBallRadius();
-    }
-
-    function addFever(amount) {
-      if (feverActive) return;
-      fever = Math.min(100, fever + amount);
-      if (fever >= 100) startFever();
-    }
-
-    function startFever() {
-      feverActive = true;
-      fever = 0;
-      feverEndAt = performance.now() + FEVER_DURATION_MS;
-      beep(980, 0.05, 0.08);
-      toast('フィーバー x2!');
-      spawnSparkle(canvas.width / 2, canvas.height * 0.45, 10);
-    }
-
-    function updateFever() {
-      if (!feverActive) return;
-      if (performance.now() >= feverEndAt) {
-        feverActive = false;
-        beep(420, 0.04, 0.055);
-        toast('フィーバー終了');
-      }
-    }
-
-    const hitHistory = [];
-    const LOOP_WINDOW_MS = 1200;
-    const SAME_COL_THRESHOLD = 3;
-    const TOTAL_HITS_THRESHOLD = 6;
-
-    function loopPenaltyMultiplier(colIndex) {
-      const now = performance.now();
-
-      while (hitHistory.length && now - hitHistory[0].t > LOOP_WINDOW_MS) {
-        hitHistory.shift();
-      }
-
-      const total = hitHistory.length;
-      const sameCol = hitHistory.filter(h => h.c === colIndex).length;
-
-      let mul = 1.0;
-      if (sameCol >= SAME_COL_THRESHOLD) mul *= 0.65;
-      if (sameCol >= SAME_COL_THRESHOLD + 1) mul *= 0.75;
-      if (total >= TOTAL_HITS_THRESHOLD) mul *= 0.7;
-      if (total >= TOTAL_HITS_THRESHOLD + 2) mul *= 0.7;
-
-      mul = Math.max(0.35, mul);
-      hitHistory.push({ t: now, c: colIndex });
-      return mul;
-    }
-
-    function drawBackground() {
-      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, '#06111f');
-      bg.addColorStop(0.48, '#0a0d18');
-      bg.addColorStop(1, '#03050a');
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.save();
-      for (const s of stars) {
-        const tw = 0.45 + Math.sin(performance.now() * 0.0018 + s.tw) * 0.2;
-        ctx.globalAlpha = s.a * tw;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    function drawPaddle() {
-      ctx.save();
-      const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
-      grd.addColorStop(0, '#7ff1ff');
-      grd.addColorStop(0.45, '#00d2ff');
-      grd.addColorStop(1, '#0073b7');
-
-      ctx.fillStyle = grd;
-      ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-
-      ctx.fillStyle = 'rgba(255,255,255,0.18)';
-      ctx.fillRect(paddle.x + 4, paddle.y + 1, Math.max(10, paddle.w - 8), 2);
-      ctx.restore();
-    }
-
-    function drawBallTrail(b) {
-      if (!b.trail) return;
-      ctx.save();
-      for (let i = 0; i < b.trail.length; i++) {
-        const t = b.trail[i];
-        const alpha = (i + 1) / b.trail.length * 0.16;
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = performance.now() < b.pierceUntil ? '#ff66aa' : '#8fefff';
-        ctx.beginPath();
-        ctx.arc(t.x, t.y, t.r * (0.45 + i / b.trail.length * 0.32), 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    function drawBall(b) {
-      drawBallTrail(b);
-
-      ctx.save();
-      const pierceOn = performance.now() < b.pierceUntil;
-      const grd = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, 1, b.x, b.y, b.r);
-      if (pierceOn) {
-        grd.addColorStop(0, '#fff2f7');
-        grd.addColorStop(0.35, '#ff92c6');
-        grd.addColorStop(1, '#ff2f8e');
-      } else {
-        grd.addColorStop(0, '#ffffff');
-        grd.addColorStop(0.45, '#dffcff');
-        grd.addColorStop(1, '#7be4ff');
-      }
-
-      ctx.beginPath();
-      ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-      ctx.fillStyle = grd;
-      ctx.fill();
-      ctx.restore();
-    }
-
-    function drawBlocks() {
-      for (let c = 0; c < blockColumnCount; c++) {
-        for (let r = 0; r < blockRowCount; r++) {
-          const blk = blocks[c][r];
-          if (blk.status !== 1) continue;
-
-          const bx = (c * (blockWidth + blockPadding)) + blockOffsetLeft;
-          const by = (r * (blockHeight + blockPadding)) + blockOffsetTop;
-          blk.x = bx;
-          blk.y = by;
-
-          const hue = 190 + r * 12 + c * 3;
-          const grd = ctx.createLinearGradient(bx, by, bx, by + blockHeight);
-          if (blk.hp === 2) {
-            grd.addColorStop(0, `hsla(${hue + 20}, 88%, 58%, 1)`);
-            grd.addColorStop(0.55, `hsla(${hue}, 86%, 40%, 1)`);
-            grd.addColorStop(1, `hsla(${hue - 8}, 82%, 28%, 1)`);
-          } else {
-            grd.addColorStop(0, `hsla(${hue + 15}, 85%, 66%, 1)`);
-            grd.addColorStop(0.55, `hsla(${hue}, 78%, 52%, 1)`);
-            grd.addColorStop(1, `hsla(${hue - 5}, 74%, 41%, 1)`);
-          }
-
-          ctx.fillStyle = grd;
-          ctx.fillRect(bx, by, blockWidth, blockHeight);
-
-          ctx.globalAlpha = 0.28;
-          ctx.fillStyle = '#fff';
-          ctx.fillRect(bx + 2, by + 2, blockWidth - 4, 2);
-          ctx.globalAlpha = 1;
-
-          if (blk.hp === 2) {
-            ctx.strokeStyle = 'rgba(255,255,255,0.34)';
-            ctx.strokeRect(bx + 0.5, by + 0.5, blockWidth - 1, blockHeight - 1);
-          }
-        }
-      }
-    }
-
-    function drawPowerups() {
-      powerups.forEach(p => {
-        p.pulse += 0.08;
-        const rr = 8.5 + Math.sin(p.pulse) * 0.8;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
-        const g = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, rr);
-        g.addColorStop(0, 'rgba(255,255,255,0.95)');
-        g.addColorStop(0.28, 'rgba(170,240,255,0.95)');
-        g.addColorStop(1, 'rgba(0,210,255,0.18)');
-        ctx.fillStyle = g;
-        ctx.fill();
-
-        ctx.strokeStyle = 'rgba(255,255,255,0.32)';
-        ctx.stroke();
-
-        ctx.fillStyle = '#021522';
-        ctx.font = '10px Arial Black';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(p.type === 'WIDE' ? 'W' : p.type === 'MULTI' ? 'M' : 'P', p.x, p.y + 0.5);
-        ctx.restore();
-      });
-    }
-
-    function drawMissiles() {
-      for (const m of missiles) {
-        ctx.save();
-        const grd = ctx.createLinearGradient(m.x, m.y - 10, m.x, m.y + 10);
-        grd.addColorStop(0, '#fff7cf');
-        grd.addColorStop(0.45, '#ffd86b');
-        grd.addColorStop(1, '#ff9f2d');
-
-        ctx.fillStyle = grd;
-        ctx.fillRect(m.x - 2, m.y - 12, 4, 12);
-
-        ctx.beginPath();
-        ctx.moveTo(m.x, m.y - 16);
-        ctx.lineTo(m.x - 4, m.y - 10);
-        ctx.lineTo(m.x + 4, m.y - 10);
-        ctx.closePath();
-        ctx.fill();
-
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = '#ffd86b';
-        ctx.fillRect(m.x - 1.5, m.y - 4, 3, 10);
-        ctx.restore();
-      }
-    }
-
-    function drawHudEffects() {
-      if (feverActive) {
-        const t = performance.now() * 0.010;
-        const a = 0.05 + (Math.sin(t) * 0.5 + 0.5) * 0.08;
-
-        ctx.save();
-        ctx.fillStyle = `rgba(255,0,127,${a})`;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = `rgba(255,90,170,${0.18 + a})`;
-        ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
-        ctx.restore();
-      }
-
-      const topGlow = ctx.createLinearGradient(0, 0, 0, 44);
-      topGlow.addColorStop(0, 'rgba(0,210,255,0.07)');
-      topGlow.addColorStop(1, 'rgba(0,210,255,0)');
-      ctx.fillStyle = topGlow;
-      ctx.fillRect(0, 0, canvas.width, 44);
-
-      ctx.save();
-      ctx.globalAlpha = 0.5;
-      ctx.fillStyle = '#fff';
-      ctx.font = '10px Arial Black';
-      ctx.textAlign = 'left';
-      ctx.fillText(`WAVE ${wave}`, 10, canvas.height - 10);
-      ctx.restore();
     }
 
     function clampPaddle() {
