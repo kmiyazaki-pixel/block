@@ -13,11 +13,7 @@
     }
 
     * { box-sizing: border-box; }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-    }
+    html, body { width: 100%; height: 100%; }
 
     body {
       background:
@@ -426,7 +422,6 @@
   </style>
 </head>
 <body>
-
   <div class="header" id="header">
     <div class="score-display">スコア: <span id="score">0</span></div>
 
@@ -618,6 +613,8 @@
     const adminBackBtn = document.getElementById('admin-back-btn');
     const adminListEl = document.getElementById('admin-list');
 
+    let adminToken = localStorage.getItem('adminToken') || '';
+
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -650,28 +647,19 @@
     let lastMissileAt = 0;
     const missiles = [];
 
-    let adminToken = localStorage.getItem('adminToken') || '';
-
     const particles = [];
     const flashes = [];
     const sparkles = [];
     const stars = [];
     const powerups = [];
-    const blocks = [];
     let balls = [];
+    let wideTimer = null;
 
-    const POWER_CHANCE = 0.18;
-    const POWER_VY = 2.2;
-    const PowerType = { WIDE:'WIDE', MULTI:'MULTI', PIERCE:'PIERCE' };
+    const WIDE_MS = 8000;
+    const PIERCE_MS = 6000;
 
     const paddleBaseW = 60;
-    const paddle = {
-      x: 0,
-      y: 0,
-      w: paddleBaseW,
-      h: 10,
-      color: '#00d2ff'
-    };
+    const paddle = { x: 0, y: 0, w: paddleBaseW, h: 10, color: '#00d2ff' };
 
     const baseBallSpeed = 3.2;
     const BALL_R_MAX = 20;
@@ -685,15 +673,16 @@
     const blockOffsetLeft = 10;
     const blockHeight = 18;
     const blockWidth = Math.floor((300 - blockOffsetLeft * 2 - blockPadding * (blockColumnCount - 1)) / blockColumnCount);
+    const blocks = [];
+
+    const POWER_CHANCE = 0.18;
+    const POWER_VY = 2.2;
+    const PowerType = { WIDE:'WIDE', MULTI:'MULTI', PIERCE:'PIERCE' };
 
     const hitHistory = [];
     const LOOP_WINDOW_MS = 1200;
     const SAME_COL_THRESHOLD = 3;
     const TOTAL_HITS_THRESHOLD = 6;
-
-    let wideTimer = null;
-    const WIDE_MS = 8000;
-    const PIERCE_MS = 6000;
 
     function toast(msg) {
       toastEl.textContent = msg;
@@ -727,12 +716,10 @@
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking`, { cache: 'no-store' });
         const list = await res.json();
-
         if (!Array.isArray(list) || list.length === 0) {
           rankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
           return;
         }
-
         rankingListEl.innerHTML = list.map((item, idx) => `
           <div class="rank-row">
             <div class="rank-num">${idx + 1}</div>
@@ -750,12 +737,10 @@
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking?all=1`, { cache: 'no-store' });
         const list = await res.json();
-
         if (!Array.isArray(list) || list.length === 0) {
           allRankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
           return;
         }
-
         allRankingListEl.innerHTML = list.map((item, idx) => `
           <div class="rank-row">
             <div class="rank-num">${idx + 1}</div>
@@ -975,13 +960,7 @@
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
         const s = (1 + Math.random() * 2.6) * force;
-        particles.push({
-          x, y,
-          vx: Math.cos(a) * s,
-          vy: Math.sin(a) * s,
-          life: 14 + Math.random() * 10,
-          mode
-        });
+        particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 14 + Math.random() * 10, mode });
       }
     }
 
@@ -1074,10 +1053,7 @@
 
     function normalizeVelocity(dx, dy, speed) {
       const len = Math.hypot(dx, dy) || 1;
-      return {
-        dx: (dx / len) * speed,
-        dy: (dy / len) * speed
-      };
+      return { dx: (dx / len) * speed, dy: (dy / len) * speed };
     }
 
     function makeBall(x, y, dx, dy) {
@@ -1091,6 +1067,11 @@
       balls.forEach(b => b.r = r);
     }
 
+    function resetToSingleBall() {
+      balls = [makeBall(canvas.width / 2, canvas.height * 0.6, 1, -1.25)];
+      syncBallRadius();
+    }
+
     function getHardBlockRate() {
       return Math.min(0.34, 0.16 + (wave - 1) * 0.015);
     }
@@ -1098,17 +1079,11 @@
     function initBlocks() {
       blocks.length = 0;
       const hardRate = getHardBlockRate();
-
       for (let c = 0; c < blockColumnCount; c++) {
         blocks[c] = [];
         for (let r = 0; r < blockRowCount; r++) {
           const hard = Math.random() < hardRate;
-          blocks[c][r] = {
-            x: 0,
-            y: 0,
-            hp: hard ? 2 : 1,
-            status: 1
-          };
+          blocks[c][r] = { x: 0, y: 0, hp: hard ? 2 : 1, status: 1 };
         }
       }
     }
@@ -1387,7 +1362,6 @@
           const cx = blk.x + blockWidth / 2;
           const cy = blk.y + blockHeight / 2;
           const dist = Math.hypot(cx - x, cy - y);
-
           if (dist <= MISSILE_EXPLOSION_RADIUS) targets.push({ c, r });
         }
       }
@@ -1416,14 +1390,11 @@
       resetToSingleBall();
       paddle.x = (canvas.width - paddle.w) / 2;
       clampPaddle();
-
       combo = 0;
       comboMul = 1.0;
-
       beep(220, 0.06, 0.09);
       buzz(16);
       toast(`ミス! 残りライフ ${lives}`);
-
       if (lives <= 0) endGame();
     }
 
@@ -1481,10 +1452,8 @@
       grd.addColorStop(0, '#7ff1ff');
       grd.addColorStop(0.45, '#00d2ff');
       grd.addColorStop(1, '#0073b7');
-
       ctx.fillStyle = grd;
       ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(paddle.x + 4, paddle.y + 1, Math.max(10, paddle.w - 8), 2);
       ctx.restore();
@@ -1507,7 +1476,6 @@
 
     function drawBall(b) {
       drawBallTrail(b);
-
       ctx.save();
       const pierceOn = performance.now() < b.pierceUntil;
       const grd = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, 1, b.x, b.y, b.r);
@@ -1520,7 +1488,6 @@
         grd.addColorStop(0.45, '#dffcff');
         grd.addColorStop(1, '#7be4ff');
       }
-
       ctx.beginPath();
       ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       ctx.fillStyle = grd;
@@ -1601,7 +1568,6 @@
         grd.addColorStop(0, '#fff7cf');
         grd.addColorStop(0.45, '#ffd86b');
         grd.addColorStop(1, '#ff9f2d');
-
         ctx.fillStyle = grd;
         ctx.fillRect(m.x - 2, m.y - 12, 4, 12);
 
@@ -1623,20 +1589,17 @@
       for (let i = powerups.length - 1; i >= 0; i--) {
         const p = powerups[i];
         p.y += p.vy;
-
         const hit = (
           p.y >= paddle.y - 10 &&
           p.y <= paddle.y + paddle.h + 10 &&
           p.x >= paddle.x &&
           p.x <= paddle.x + paddle.w
         );
-
         if (hit) {
           applyPower(p.type);
           powerups.splice(i, 1);
           continue;
         }
-
         if (p.y > canvas.height + 20) powerups.splice(i, 1);
       }
     }
@@ -1700,7 +1663,6 @@
 
           b.dx = nv.dx;
           b.dy = nv.dy;
-
           combo = 0;
           comboMul = 1.0;
           beep(520, 0.02, 0.05);
@@ -1712,12 +1674,58 @@
         }
       }
 
-      if (ny > canvas.height + b.r + 2) {
-        return true;
-      }
+      if (ny > canvas.height + b.r + 2) return true;
 
       resolveBallBlockCollision(b, nx, ny, stepDx, stepDy);
       clampBallInside(b);
+      return false;
+    }
+
+    function resolveBallBlockCollision(b, nx, ny, stepDx, stepDy) {
+      const pierceOn = performance.now() < b.pierceUntil;
+
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
+          const blk = blocks[c][r];
+          if (blk.status !== 1) continue;
+          if (!circleHitsRect(nx, ny, b.r, blk.x, blk.y, blockWidth, blockHeight)) continue;
+
+          const prevX = b.x;
+          const prevY = b.y;
+
+          const fromLeft = prevX + b.r <= blk.x && nx + b.r >= blk.x;
+          const fromRight = prevX - b.r >= blk.x + blockWidth && nx - b.r <= blk.x + blockWidth;
+          const fromTop = prevY + b.r <= blk.y && ny + b.r >= blk.y;
+          const fromBottom = prevY - b.r >= blk.y + blockHeight && ny - b.r <= blk.y + blockHeight;
+
+          if (!pierceOn) {
+            if ((fromLeft || fromRight) && !(fromTop || fromBottom)) {
+              b.dx = -b.dx;
+              nx = fromLeft ? blk.x - b.r - 0.01 : blk.x + blockWidth + b.r + 0.01;
+            } else if ((fromTop || fromBottom) && !(fromLeft || fromRight)) {
+              b.dy = -b.dy;
+              ny = fromTop ? blk.y - b.r - 0.01 : blk.y + blockHeight + b.r + 0.01;
+            } else {
+              if (Math.abs(stepDx) > Math.abs(stepDy)) {
+                b.dx = -b.dx;
+                nx = prevX;
+              } else {
+                b.dy = -b.dy;
+                ny = prevY;
+              }
+            }
+          }
+
+          damageBlock(c, r, false);
+          b.x = nx;
+          b.y = ny;
+          clampBallInside(b);
+          return true;
+        }
+      }
+
+      b.x = nx;
+      b.y = ny;
       return false;
     }
 
@@ -1730,7 +1738,6 @@
 
       for (let i = balls.length - 1; i >= 0; i--) {
         const b = balls[i];
-
         if (!b.trail) b.trail = [];
         b.trail.push({ x: b.x, y: b.y, r: b.r });
         if (b.trail.length > 4) b.trail.shift();
@@ -1835,7 +1842,6 @@
 
       wideUntil = 0;
       pierceUntil = 0;
-
       missileCharge = 0;
       missileAutoQueued = false;
       missiles.length = 0;
@@ -1941,6 +1947,17 @@
       clampPaddle();
     }
 
+    function showPanel(panelEl) {
+      startPanel.style.display = 'none';
+      allRankingPanel.style.display = 'none';
+      tutorialPanel.style.display = 'none';
+      pausePanel.style.display = 'none';
+      rankingPanel.style.display = 'none';
+      adminLoginPanel.style.display = 'none';
+      adminPanel.style.display = 'none';
+      if (panelEl) panelEl.style.display = 'block';
+    }
+
     let isMouseDown = false;
 
     window.addEventListener('touchstart', (e) => {
@@ -1979,7 +1996,6 @@
 
     resumeBtn.addEventListener('click', resumeGame);
     restartBtn.addEventListener('click', restartFromPause);
-
     startBtn.addEventListener('click', onStartPressed);
 
     tutorialOkBtn.addEventListener('click', () => {
