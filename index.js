@@ -1,4 +1,3 @@
-// index.js（Render向け：ランキング + 管理者パネル + 行ごと削除）
 require('dotenv').config();
 
 const express = require('express');
@@ -11,7 +10,6 @@ dns.setDefaultResultOrder('ipv4first');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// GitHub Pages からのアクセスを許可（あなたのPagesドメイン）
 app.use(cors({
   origin: ['https://kmiyazaki-pixel.github.io'],
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
@@ -20,11 +18,9 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- 動作確認 ---
 app.get('/', (req, res) => res.send('OK: API is running'));
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// --- 管理者認証（Bearerトークン）---
 function requireAdmin(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
@@ -36,12 +32,10 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// 管理者ログイン検証（フロントはここでOKならログイン成功扱い）
 app.get('/api/admin/check', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
-// --- MongoDB接続 ---
 const MONGO_URL = process.env.MONGO_URL;
 if (!MONGO_URL) console.error('❌ MONGO_URL is missing');
 
@@ -49,7 +43,6 @@ mongoose.connect(MONGO_URL, { serverSelectionTimeoutMS: 15000, family: 4 })
   .then(() => console.log('✅ MongoDB connected'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
-// --- Schema ---
 const scoreSchema = new mongoose.Schema({
   name: { type: String, required: true },
   score: { type: Number, required: true },
@@ -57,20 +50,23 @@ const scoreSchema = new mongoose.Schema({
 });
 const Score = mongoose.model('Score', scoreSchema);
 
-// --- API: ranking（通常：TOP5） ---
+// 通常はTOP5、?all=1 なら全件（最大500件）
 app.get('/api/ranking', async (req, res) => {
   try {
-    const topScores = await Score.find()
+    const all = String(req.query.all || '') === '1';
+    const limit = all ? 500 : 5;
+
+    const scores = await Score.find()
       .sort({ score: -1, date: 1 })
-      .limit(5);
-    res.json(topScores);
+      .limit(limit);
+
+    res.json(scores);
   } catch (err) {
     console.error('❌ /api/ranking error:', err);
     res.status(500).json({ error: '取得失敗' });
   }
 });
 
-// --- API: save score（同名は自己ベストだけ残す） ---
 app.post('/api/save-score', async (req, res) => {
   try {
     let { name, score } = req.body;
@@ -94,9 +90,6 @@ app.post('/api/save-score', async (req, res) => {
   }
 });
 
-// ===== 管理者用 =====
-
-// 管理者：一覧（最大100件）
 app.get('/api/admin/scores', requireAdmin, async (req, res) => {
   try {
     const list = await Score.find()
@@ -109,7 +102,6 @@ app.get('/api/admin/scores', requireAdmin, async (req, res) => {
   }
 });
 
-// 管理者：全削除（確認付き）
 app.delete('/api/admin/scores', requireAdmin, async (req, res) => {
   try {
     if (req.query.confirm !== 'YES') {
@@ -123,7 +115,6 @@ app.delete('/api/admin/scores', requireAdmin, async (req, res) => {
   }
 });
 
-// 管理者：1件削除（MongoDB _id で削除）
 app.delete('/api/admin/score/:id', requireAdmin, async (req, res) => {
   try {
     const id = String(req.params.id || '').trim();
