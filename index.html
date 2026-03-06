@@ -9,6 +9,7 @@
       --neon-blue: #00d2ff;
       --neon-pink: #ff007f;
       --neon-green: #0f0;
+      --missile-gold: #ffd86b;
     }
 
     * { box-sizing: border-box; }
@@ -75,6 +76,46 @@
       border-color: rgba(0,210,255,0.62);
       box-shadow: 0 0 10px rgba(0,210,255,0.16);
       color: #fff;
+    }
+
+    .missile-wrap {
+      width: 100%;
+      max-width: 300px;
+      margin: 8px auto 0;
+      padding: 0 4px;
+    }
+
+    .missile-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: rgba(255,255,255,0.78);
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .missile-ready {
+      color: var(--missile-gold);
+      text-shadow: 0 0 8px rgba(255,216,107,0.22);
+    }
+
+    .missile-bar {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      overflow: hidden;
+    }
+
+    .missile-fill {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ffb347, #ffd86b 55%, #fff1b5);
+      box-shadow: 0 0 10px rgba(255,216,107,0.25);
+      transition: width 0.08s linear;
     }
 
     #game-container {
@@ -158,8 +199,7 @@
         linear-gradient(180deg, rgba(18,22,38,0.95), rgba(8,8,22,0.96));
       border: 1px solid rgba(255,255,255,0.16);
       backdrop-filter: blur(12px);
-      box-shadow:
-        0 16px 40px rgba(0,0,0,0.36);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.36);
     }
 
     .panel h2 {
@@ -396,6 +436,16 @@
       <span class="badge" id="st-multi">MULTI x1</span>
     </div>
 
+    <div class="missile-wrap">
+      <div class="missile-head">
+        <span>MISSILE</span>
+        <span id="missile-text">0%</span>
+      </div>
+      <div class="missile-bar">
+        <div class="missile-fill" id="missile-fill"></div>
+      </div>
+    </div>
+
     <div id="pause-btn">⏸</div>
   </div>
 
@@ -412,7 +462,7 @@
         <button class="menu-btn secondary" id="open-admin-btn">ADMIN</button>
       </div>
 
-      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10 / WAVEごとに少し高速化</div>
+      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10 / WAVEごとに +0.22 で無限加速</div>
 
       <div class="ranking-box">
         <div class="ranking-title">TOP 5 RANKING</div>
@@ -426,11 +476,11 @@
       <h2 style="color:#fff;">HOW TO PLAY</h2>
       <div class="tip">
         ・画面どこをこすっても操作できる（PCは押しながら）<br>
-        ・ブロック数が増えて長く気持ちよく遊べる<br>
-        ・全消しごとに少しずつスピードUP<br>
+        ・ブロック全消しでWAVE進行、速度は上限なしで上昇<br>
         ・硬いブロックは2回で破壊<br>
         ・waveが進むほど硬いブロック率も少し上がる<br>
-        ・FEVER中は演出とスコア倍率が強化
+        ・ダブルタップ / ダブルクリックでMISSILE発射<br>
+        ・MISSILEはすぐには溜まらない
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -497,6 +547,9 @@
     const stWide = document.getElementById('st-wide');
     const stPierce = document.getElementById('st-pierce');
     const stMulti = document.getElementById('st-multi');
+
+    const missileFillEl = document.getElementById('missile-fill');
+    const missileTextEl = document.getElementById('missile-text');
 
     const pauseBtn = document.getElementById('pause-btn');
 
@@ -744,8 +797,7 @@
       showPanel(startPanel);
     }
 
-    let shakeTime = 0;
-    let shakePower = 0;
+    // ===== Effect / lightweight =====
     const particles = [];
     const flashes = [];
     const sparkles = [];
@@ -764,9 +816,8 @@
       }
     }
 
-    function addShake(p = 6, t = 10) {
-      shakePower = Math.max(shakePower, p);
-      shakeTime = Math.max(shakeTime, t);
+    function addShake() {
+      // 画面揺れは完全削除
     }
 
     function spawnParticles(x, y, n = 10, force = 1.0, colorMode = 'white') {
@@ -830,6 +881,7 @@
         ctx.globalAlpha = a;
         if (p.mode === 'pink') ctx.fillStyle = '#ff66aa';
         else if (p.mode === 'blue') ctx.fillStyle = '#66e6ff';
+        else if (p.mode === 'gold') ctx.fillStyle = '#ffd86b';
         else ctx.fillStyle = '#fff';
         ctx.fillRect(p.x, p.y, 2, 2);
       }
@@ -860,6 +912,7 @@
       ctx.restore();
     }
 
+    // ===== Audio =====
     let audioCtx = null;
     function ensureAudio() {
       try {
@@ -888,6 +941,7 @@
       if (navigator.vibrate) navigator.vibrate(ms);
     }
 
+    // ===== Game State =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -910,6 +964,15 @@
     let waveSpeedBonus = 0;
     const WAVE_SPEED_STEP = 0.22;
 
+    // missile
+    let missileCharge = 0;
+    const MISSILE_MAX = 100;
+    const MISSILE_PASSIVE_CHARGE = 0.025; // かなり遅め
+    const MISSILE_BLOCK_CHARGE = 5;       // 1ブロックで少しだけ
+    const MISSILE_COOLDOWN_MS = 260;
+    let lastMissileAt = 0;
+    const missiles = [];
+
     const paddleBaseW = 60;
     const paddle = {
       x: 0,
@@ -930,7 +993,7 @@
     }
 
     function getTargetBallSpeed() {
-      return Math.min(6.2, baseBallSpeed + waveSpeedBonus);
+      return baseBallSpeed + waveSpeedBonus; // 上限なし
     }
 
     function normalizeVelocity(dx, dy, speed) {
@@ -970,6 +1033,7 @@
       initStars();
     }
 
+    // ===== Blocks =====
     const blockColumnCount = 8;
     const blockRowCount = 8;
     const blockPadding = 4;
@@ -1016,6 +1080,7 @@
       return true;
     }
 
+    // ===== Powerups =====
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -1058,6 +1123,11 @@
 
       stMulti.classList.toggle('on', balls.length > 1);
       stMulti.textContent = `MULTI x${balls.length}`;
+
+      const pct = Math.max(0, Math.min(100, missileCharge));
+      missileFillEl.style.width = `${pct}%`;
+      missileTextEl.textContent = pct >= 100 ? 'READY' : `${pct.toFixed(0)}%`;
+      missileTextEl.className = pct >= 100 ? 'missile-ready' : '';
     }
 
     function applyPower(type) {
@@ -1068,7 +1138,6 @@
         paddle.w = Math.min(paddleBaseW * 1.8, 112);
         wideUntil = Math.max(wideUntil, now + WIDE_MS);
         toast('POWER: WIDE');
-        addShake(2, 4);
         beep(520, 0.02, 0.05);
         spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 4);
 
@@ -1081,7 +1150,6 @@
 
       if (type === PowerType.MULTI) {
         toast('POWER: MULTI');
-        addShake(3, 6);
         beep(680, 0.03, 0.06);
         const b = balls[0] || makeBall(canvas.width / 2, canvas.height / 2, 1, -1);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
@@ -1092,7 +1160,6 @@
 
       if (type === PowerType.PIERCE) {
         toast('POWER: PIERCE');
-        addShake(3, 6);
         beep(760, 0.03, 0.06);
         pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
@@ -1102,6 +1169,7 @@
       updateStatusUI();
     }
 
+    // ===== Score / Fever =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -1122,7 +1190,6 @@
       feverActive = true;
       fever = 0;
       feverEndAt = performance.now() + FEVER_DURATION_MS;
-      addShake(5, 10);
       beep(980, 0.05, 0.08);
       toast('FEVER x2!');
       spawnSparkle(canvas.width / 2, canvas.height * 0.45, 10);
@@ -1137,6 +1204,7 @@
       }
     }
 
+    // ===== Loop Penalty =====
     const hitHistory = [];
     const LOOP_WINDOW_MS = 1200;
     const SAME_COL_THRESHOLD = 3;
@@ -1163,6 +1231,7 @@
       return mul;
     }
 
+    // ===== Draw =====
     function drawBackground() {
       const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
       bg.addColorStop(0, '#06111f');
@@ -1219,7 +1288,6 @@
       drawBallTrail(b);
 
       ctx.save();
-
       const pierceOn = performance.now() < b.pierceUntil;
       const grd = ctx.createRadialGradient(b.x - b.r * 0.35, b.y - b.r * 0.35, 1, b.x, b.y, b.r);
       if (pierceOn) {
@@ -1236,7 +1304,6 @@
       ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
       ctx.fillStyle = grd;
       ctx.fill();
-
       ctx.restore();
     }
 
@@ -1252,7 +1319,6 @@
           blk.y = by;
 
           const hue = 190 + r * 12 + c * 3;
-
           const grd = ctx.createLinearGradient(bx, by, bx, by + blockHeight);
           if (blk.hp === 2) {
             grd.addColorStop(0, `hsla(${hue + 20}, 88%, 58%, 1)`);
@@ -1286,7 +1352,6 @@
         const rr = 8.5 + Math.sin(p.pulse) * 0.8;
 
         ctx.save();
-
         ctx.beginPath();
         ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
         const g = ctx.createRadialGradient(p.x - 2, p.y - 2, 1, p.x, p.y, rr);
@@ -1306,6 +1371,31 @@
         ctx.fillText(p.type === 'WIDE' ? 'W' : p.type === 'MULTI' ? 'M' : 'P', p.x, p.y + 0.5);
         ctx.restore();
       });
+    }
+
+    function drawMissiles() {
+      for (const m of missiles) {
+        ctx.save();
+        const grd = ctx.createLinearGradient(m.x, m.y - 10, m.x, m.y + 10);
+        grd.addColorStop(0, '#fff7cf');
+        grd.addColorStop(0.45, '#ffd86b');
+        grd.addColorStop(1, '#ff9f2d');
+
+        ctx.fillStyle = grd;
+        ctx.fillRect(m.x - 2, m.y - 12, 4, 12);
+
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y - 16);
+        ctx.lineTo(m.x - 4, m.y - 10);
+        ctx.lineTo(m.x + 4, m.y - 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = '#ffd86b';
+        ctx.fillRect(m.x - 1.5, m.y - 4, 3, 10);
+        ctx.restore();
+      }
     }
 
     function drawHudEffects() {
@@ -1338,6 +1428,7 @@
       ctx.restore();
     }
 
+    // ===== Helpers =====
     function clampPaddle() {
       if (paddle.x < 0) paddle.x = 0;
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
@@ -1358,7 +1449,102 @@
       }
     }
 
-    function collisionDetectionForBall(b) {
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function circleHitsRect(cx, cy, r, rx, ry, rw, rh) {
+      const closestX = clamp(cx, rx, rx + rw);
+      const closestY = clamp(cy, ry, ry + rh);
+      const dx = cx - closestX;
+      const dy = cy - closestY;
+      return dx * dx + dy * dy <= r * r;
+    }
+
+    function chargeMissile(amount) {
+      missileCharge = Math.min(MISSILE_MAX, missileCharge + amount);
+    }
+
+    function fireMissiles() {
+      const now = performance.now();
+      if (missileCharge < MISSILE_MAX) {
+        toast('MISSILE NOT READY');
+        return false;
+      }
+      if (now - lastMissileAt < MISSILE_COOLDOWN_MS) return false;
+
+      lastMissileAt = now;
+      missileCharge = 0;
+
+      missiles.push({ x: paddle.x + 8, y: paddle.y - 4, vy: -7.2 });
+      missiles.push({ x: paddle.x + paddle.w - 8, y: paddle.y - 4, vy: -7.2 });
+
+      beep(1180, 0.04, 0.08);
+      spawnParticles(paddle.x + paddle.w / 2, paddle.y - 2, 10, 1.4, 'gold');
+      toast('MISSILE FIRE!');
+      return true;
+    }
+
+    // ===== Collision / Damage =====
+    function damageBlock(c, r, b, isMissile = false) {
+      const blk = blocks[c][r];
+      if (!blk || blk.status !== 1) return;
+
+      const mul = loopPenaltyMultiplier(c);
+      blk.hp -= 1;
+
+      const cx = blk.x + blockWidth / 2;
+      const cy = blk.y + blockHeight / 2;
+
+      const partForce = feverActive ? 1.55 : 1.15;
+      const gainSoft = feverActive ? 0.09 : 0.055;
+      const gainHard = feverActive ? 0.13 : 0.078;
+
+      if (blk.hp >= 1) {
+        spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+        spawnParticles(cx, cy, feverActive ? 13 : 8, partForce, isMissile ? 'gold' : 'blue');
+        spawnSparkle(cx, cy, 4);
+
+        const base = feverActive ? 980 : 780;
+        const freq = Math.min(base + combo * 12, 1600);
+        beep(freq, 0.02, gainSoft);
+        buzz(6);
+
+        combo += 1;
+        addFever(6);
+        addScore(Math.max(1, Math.floor(8 * mul)));
+        chargeMissile(MISSILE_BLOCK_CHARGE * 0.5);
+      }
+
+      if (blk.hp <= 0) {
+        blk.status = 0;
+
+        combo += 1;
+        addFever(8);
+        addScore(Math.max(1, Math.floor(12 * mul)));
+
+        spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
+        spawnParticles(cx, cy, feverActive ? 22 : 14, partForce * 1.08, isMissile ? 'gold' : (feverActive ? 'pink' : 'white'));
+        spawnSparkle(cx, cy, feverActive ? 8 : 5);
+
+        const base2 = feverActive ? 1400 : 980;
+        const freq2 = Math.min(base2 + combo * 18, 2200);
+        beep(freq2, 0.03, gainHard);
+        buzz(feverActive ? 14 : 10);
+
+        maybeDropPowerup(cx, cy);
+        chargeMissile(MISSILE_BLOCK_CHARGE);
+
+        if (isAllCleared()) {
+          beep(1300, 0.06, feverActive ? 0.14 : 0.11);
+          spawnParticles(canvas.width / 2, canvas.height * 0.35, 28, 1.8, 'pink');
+          spawnSparkle(canvas.width / 2, canvas.height * 0.35, 10);
+          resetBlocksForNextWave();
+        }
+      }
+    }
+
+    function resolveBallBlockCollision(b, nx, ny, stepDx, stepDy) {
       const pierceOn = performance.now() < b.pierceUntil;
 
       for (let c = 0; c < blockColumnCount; c++) {
@@ -1366,69 +1552,46 @@
           const blk = blocks[c][r];
           if (blk.status !== 1) continue;
 
-          if (b.x > blk.x && b.x < blk.x + blockWidth && b.y > blk.y && b.y < blk.y + blockHeight) {
-            const mul = loopPenaltyMultiplier(c);
+          if (!circleHitsRect(nx, ny, b.r, blk.x, blk.y, blockWidth, blockHeight)) continue;
 
-            blk.hp -= 1;
-            if (!pierceOn) b.dy = -b.dy;
+          // side estimation
+          const prevX = b.x;
+          const prevY = b.y;
 
-            const cx = blk.x + blockWidth / 2;
-            const cy = blk.y + blockHeight / 2;
+          const fromLeft = prevX + b.r <= blk.x && nx + b.r >= blk.x;
+          const fromRight = prevX - b.r >= blk.x + blockWidth && nx - b.r <= blk.x + blockWidth;
+          const fromTop = prevY + b.r <= blk.y && ny + b.r >= blk.y;
+          const fromBottom = prevY - b.r >= blk.y + blockHeight && ny - b.r <= blk.y + blockHeight;
 
-            const partForce = feverActive ? 1.55 : 1.15;
-            const gainSoft = feverActive ? 0.09 : 0.055;
-            const gainHard = feverActive ? 0.13 : 0.078;
-
-            if (blk.hp >= 1) {
-              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-              spawnParticles(cx, cy, feverActive ? 13 : 8, partForce, 'blue');
-              spawnSparkle(cx, cy, 4);
-              addShake(3, 5);
-
-              const base = feverActive ? 980 : 780;
-              const freq = Math.min(base + combo * 12, 1600);
-              beep(freq, 0.02, gainSoft);
-              buzz(6);
-
-              combo += 1;
-              addFever(6);
-              addScore(Math.max(1, Math.floor(8 * mul)));
-            }
-
-            if (blk.hp <= 0) {
-              blk.status = 0;
-
-              combo += 1;
-              addFever(8);
-              addScore(Math.max(1, Math.floor(12 * mul)));
-
-              spawnFlash(blk.x, blk.y, blockWidth, blockHeight);
-              spawnParticles(cx, cy, feverActive ? 22 : 14, partForce * 1.08, feverActive ? 'pink' : 'white');
-              spawnSparkle(cx, cy, feverActive ? 8 : 5);
-              addShake(feverActive ? 9 : 7, feverActive ? 12 : 10);
-
-              const base2 = feverActive ? 1400 : 980;
-              const freq2 = Math.min(base2 + combo * 18, 2200);
-              beep(freq2, 0.03, gainHard);
-              buzz(feverActive ? 14 : 10);
-
-              maybeDropPowerup(cx, cy);
-
-              if (isAllCleared()) {
-                addShake(10, 14);
-                beep(1300, 0.06, feverActive ? 0.14 : 0.11);
-                spawnParticles(canvas.width / 2, canvas.height * 0.35, 28, 1.8, 'pink');
-                spawnSparkle(canvas.width / 2, canvas.height * 0.35, 10);
-                resetBlocksForNextWave();
+          if (!pierceOn) {
+            if ((fromLeft || fromRight) && !(fromTop || fromBottom)) {
+              b.dx = -b.dx;
+              nx = fromLeft ? blk.x - b.r - 0.01 : blk.x + blockWidth + b.r + 0.01;
+            } else if ((fromTop || fromBottom) && !(fromLeft || fromRight)) {
+              b.dy = -b.dy;
+              ny = fromTop ? blk.y - b.r - 0.01 : blk.y + blockHeight + b.r + 0.01;
+            } else {
+              if (Math.abs(stepDx) > Math.abs(stepDy)) {
+                b.dx = -b.dx;
+                nx = prevX;
+              } else {
+                b.dy = -b.dy;
+                ny = prevY;
               }
-
-              return;
             }
-
-            return;
           }
+
+          damageBlock(c, r, b, false);
+          b.x = nx;
+          b.y = ny;
+          clampBallInside(b);
+          return true;
         }
       }
+
+      b.x = nx;
+      b.y = ny;
+      return false;
     }
 
     function updatePowerups() {
@@ -1453,6 +1616,32 @@
       }
     }
 
+    function updateMissiles() {
+      for (let i = missiles.length - 1; i >= 0; i--) {
+        const m = missiles[i];
+        m.y += m.vy;
+
+        let removed = false;
+
+        for (let c = 0; c < blockColumnCount && !removed; c++) {
+          for (let r = 0; r < blockRowCount && !removed; r++) {
+            const blk = blocks[c][r];
+            if (blk.status !== 1) continue;
+
+            if (m.x >= blk.x && m.x <= blk.x + blockWidth && m.y >= blk.y && m.y <= blk.y + blockHeight) {
+              damageBlock(c, r, null, true);
+              spawnParticles(m.x, m.y, 8, 1.0, 'gold');
+              missiles.splice(i, 1);
+              removed = true;
+            }
+          }
+        }
+
+        if (removed) continue;
+        if (m.y < -20) missiles.splice(i, 1);
+      }
+    }
+
     function loseLife() {
       lives -= 1;
       resetToSingleBall();
@@ -1462,12 +1651,70 @@
       combo = 0;
       comboMul = 1.0;
 
-      addShake(7, 10);
       beep(220, 0.06, 0.09);
       buzz(16);
       toast(`MISS! LIFE ${lives}`);
 
       if (lives <= 0) endGame();
+    }
+
+    function handleBallSubstep(b, stepDx, stepDy) {
+      let nx = b.x + stepDx;
+      let ny = b.y + stepDy;
+
+      // walls
+      if (nx > canvas.width - b.r) {
+        nx = canvas.width - b.r;
+        b.dx = -Math.abs(b.dx);
+      } else if (nx < b.r) {
+        nx = b.r;
+        b.dx = Math.abs(b.dx);
+      }
+
+      if (ny < b.r) {
+        ny = b.r;
+        b.dy = Math.abs(b.dy);
+      }
+
+      // paddle
+      const movingDown = stepDy > 0;
+      const crossedPaddleTop = b.y + b.r <= paddle.y && ny + b.r >= paddle.y;
+
+      if (movingDown && crossedPaddleTop) {
+        if (nx >= paddle.x - b.r && nx <= paddle.x + paddle.w + b.r) {
+          const hitPos = (nx - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+          const targetSpeed = getTargetBallSpeed();
+          const MAX_DX_RATIO = 0.82;
+          const MIN_DY_RATIO = 0.58;
+
+          let ndx = hitPos * targetSpeed * MAX_DX_RATIO;
+          ndx = Math.max(-targetSpeed * MAX_DX_RATIO, Math.min(targetSpeed * MAX_DX_RATIO, ndx));
+
+          let ndy = -Math.max(targetSpeed * MIN_DY_RATIO, targetSpeed - Math.abs(ndx));
+          const nv = normalizeVelocity(ndx, ndy, targetSpeed);
+
+          b.dx = nv.dx;
+          b.dy = nv.dy;
+
+          combo = 0;
+          comboMul = 1.0;
+
+          beep(520, 0.02, 0.05);
+
+          ny = paddle.y - b.r - 0.01;
+          b.x = nx;
+          b.y = ny;
+          return false;
+        }
+      }
+
+      if (ny > canvas.height + b.r + 2) {
+        return true; // lost
+      }
+
+      resolveBallBlockCollision(b, nx, ny, stepDx, stepDy);
+      clampBallInside(b);
+      return false;
     }
 
     function updateBalls() {
@@ -1484,83 +1731,49 @@
         b.trail.push({ x: b.x, y: b.y, r: b.r });
         if (b.trail.length > 4) b.trail.shift();
 
-        let nx = b.x + b.dx;
-        let ny = b.y + b.dy;
+        const maxMove = Math.max(Math.abs(b.dx), Math.abs(b.dy));
+        const subSteps = Math.max(1, Math.ceil(maxMove / 4)); // 高速時のすり抜け対策
+        const stepDx = b.dx / subSteps;
+        const stepDy = b.dy / subSteps;
 
-        if (nx > canvas.width - b.r) {
-          b.dx = -Math.abs(b.dx);
-          nx = canvas.width - b.r;
-        } else if (nx < b.r) {
-          b.dx = Math.abs(b.dx);
-          nx = b.r;
+        let lost = false;
+
+        for (let s = 0; s < subSteps; s++) {
+          lost = handleBallSubstep(b, stepDx, stepDy);
+          if (lost) break;
         }
 
-        if (ny < b.r) {
-          b.dy = Math.abs(b.dy);
-          ny = b.r;
+        if (lost) {
+          balls.splice(i, 1);
+          continue;
         }
-
-        if (ny > paddle.y - b.r) {
-          if (b.x > paddle.x && b.x < paddle.x + paddle.w) {
-            const hitPos = (b.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
-            const targetSpeed = getTargetBallSpeed();
-            const MAX_DX_RATIO = 0.82;
-            const MIN_DY_RATIO = 0.58;
-
-            let ndx = hitPos * targetSpeed * MAX_DX_RATIO;
-            ndx = Math.max(-targetSpeed * MAX_DX_RATIO, Math.min(targetSpeed * MAX_DX_RATIO, ndx));
-
-            let ndy = -Math.max(targetSpeed * MIN_DY_RATIO, targetSpeed - Math.abs(ndx));
-            const nv = normalizeVelocity(ndx, ndy, targetSpeed);
-
-            b.dx = nv.dx;
-            b.dy = nv.dy;
-
-            combo = 0;
-            comboMul = 1.0;
-
-            addShake(2, 4);
-            beep(520, 0.02, 0.05);
-
-            ny = paddle.y - b.r;
-          } else if (b.y > canvas.height) {
-            balls.splice(i, 1);
-            continue;
-          }
-        }
-
-        b.x = nx;
-        b.y = ny;
-        clampBallInside(b);
-
-        collisionDetectionForBall(b);
       }
 
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
+    // ===== Missile charge =====
+    function updateMissileCharge() {
+      if (!running || isPaused || isGameOver) return;
+      chargeMissile(MISSILE_PASSIVE_CHARGE);
+    }
+
+    // ===== Loop =====
     function loop() {
       if (!running || isPaused || isGameOver) return;
-
-      ctx.save();
-
-      if (shakeTime > 0) {
-        const dx = (Math.random() * 2 - 1) * shakePower;
-        const dy = (Math.random() * 2 - 1) * shakePower;
-        ctx.translate(dx, dy);
-        shakeTime -= 1;
-        shakePower *= 0.9;
-      }
 
       drawBackground();
       drawHudEffects();
       drawBlocks();
       drawPowerups();
+      drawMissiles();
       balls.forEach(drawBall);
       drawPaddle();
 
       updatePowerups();
+      updateMissiles();
       updateBalls();
+      updateMissileCharge();
 
       updateParticles();
       updateFlashes();
@@ -1569,12 +1782,11 @@
       drawParticles();
       drawSparkles();
 
-      ctx.restore();
-
       updateStatusUI();
       requestAnimationFrame(loop);
     }
 
+    // ===== UI =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -1599,6 +1811,10 @@
 
       wideUntil = 0;
       pierceUntil = 0;
+
+      missileCharge = 0;
+      missiles.length = 0;
+      lastMissileAt = 0;
 
       hitHistory.length = 0;
       powerups.length = 0;
@@ -1718,11 +1934,38 @@
       clampPaddle();
     }
 
+    // ===== Double tap / double click missile =====
     let isMouseDown = false;
+    let lastTapTime = 0;
+    let lastTapX = 0;
+    let lastTapY = 0;
+    const DOUBLE_TAP_MS = 260;
+    const DOUBLE_TAP_DIST = 36;
+
+    function handleTapForMissile(clientX, clientY) {
+      const now = performance.now();
+      const dx = clientX - lastTapX;
+      const dy = clientY - lastTapY;
+      const dist2 = dx * dx + dy * dy;
+
+      if (now - lastTapTime <= DOUBLE_TAP_MS && dist2 <= DOUBLE_TAP_DIST * DOUBLE_TAP_DIST) {
+        fireMissiles();
+        lastTapTime = 0;
+        lastTapX = 0;
+        lastTapY = 0;
+        return;
+      }
+
+      lastTapTime = now;
+      lastTapX = clientX;
+      lastTapY = clientY;
+    }
 
     window.addEventListener('touchstart', (e) => {
       if (!running || isPaused || isGameOver) return;
-      movePaddleByClientX(e.touches[0].clientX);
+      const t = e.touches[0];
+      handleTapForMissile(t.clientX, t.clientY);
+      movePaddleByClientX(t.clientX);
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
@@ -1735,6 +1978,7 @@
       if (!running || isPaused || isGameOver) return;
       ensureAudio();
       isMouseDown = true;
+      handleTapForMissile(e.clientX, e.clientY);
       movePaddleByClientX(e.clientX);
     });
 
@@ -1748,6 +1992,7 @@
       movePaddleByClientX(e.clientX);
     });
 
+    // ===== Bind =====
     pauseBtn.addEventListener('click', () => {
       if (!running || isGameOver) return;
       if (isPaused) resumeGame();
@@ -1823,6 +2068,7 @@
       resizeCanvasTall();
     });
 
+    // ===== Init =====
     resizeCanvasTall();
     paddle.x = (canvas.width - paddle.w) / 2;
     paddle.y = canvas.height - 25;
