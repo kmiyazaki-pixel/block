@@ -480,7 +480,7 @@
         ・硬いブロックは2回で破壊<br>
         ・waveが進むほど硬いブロック率も少し上がる<br>
         ・ダブルタップ / ダブルクリックでMISSILE発射<br>
-        ・MISSILEはすぐには溜まらない
+        ・MISSILEは溜まりにくく、着弾で範囲爆発
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -797,7 +797,6 @@
       showPanel(startPanel);
     }
 
-    // ===== Effect / lightweight =====
     const particles = [];
     const flashes = [];
     const sparkles = [];
@@ -816,9 +815,7 @@
       }
     }
 
-    function addShake() {
-      // 画面揺れは完全削除
-    }
+    function addShake() {}
 
     function spawnParticles(x, y, n = 10, force = 1.0, colorMode = 'white') {
       for (let i = 0; i < n; i++) {
@@ -912,7 +909,6 @@
       ctx.restore();
     }
 
-    // ===== Audio =====
     let audioCtx = null;
     function ensureAudio() {
       try {
@@ -941,7 +937,6 @@
       if (navigator.vibrate) navigator.vibrate(ms);
     }
 
-    // ===== Game State =====
     let running = false;
     let isGameOver = false;
     let isPaused = false;
@@ -964,12 +959,12 @@
     let waveSpeedBonus = 0;
     const WAVE_SPEED_STEP = 0.22;
 
-    // missile
     let missileCharge = 0;
     const MISSILE_MAX = 100;
-    const MISSILE_PASSIVE_CHARGE = 0.025; // かなり遅め
-    const MISSILE_BLOCK_CHARGE = 5;       // 1ブロックで少しだけ
+    const MISSILE_PASSIVE_CHARGE = 0.010;
+    const MISSILE_BLOCK_CHARGE = 3;
     const MISSILE_COOLDOWN_MS = 260;
+    const MISSILE_EXPLOSION_RADIUS = 42;
     let lastMissileAt = 0;
     const missiles = [];
 
@@ -993,7 +988,7 @@
     }
 
     function getTargetBallSpeed() {
-      return baseBallSpeed + waveSpeedBonus; // 上限なし
+      return baseBallSpeed + waveSpeedBonus;
     }
 
     function normalizeVelocity(dx, dy, speed) {
@@ -1033,7 +1028,6 @@
       initStars();
     }
 
-    // ===== Blocks =====
     const blockColumnCount = 8;
     const blockRowCount = 8;
     const blockPadding = 4;
@@ -1080,7 +1074,6 @@
       return true;
     }
 
-    // ===== Powerups =====
     const powerups = [];
     const POWER_CHANCE = 0.18;
     const POWER_VY = 2.2;
@@ -1169,7 +1162,6 @@
       updateStatusUI();
     }
 
-    // ===== Score / Fever =====
     function addScore(base) {
       comboMul = Math.min(1 + combo * 0.08, 2.5);
       const feverMul = feverActive ? FEVER_MULT : 1.0;
@@ -1204,7 +1196,6 @@
       }
     }
 
-    // ===== Loop Penalty =====
     const hitHistory = [];
     const LOOP_WINDOW_MS = 1200;
     const SAME_COL_THRESHOLD = 3;
@@ -1231,7 +1222,6 @@
       return mul;
     }
 
-    // ===== Draw =====
     function drawBackground() {
       const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
       bg.addColorStop(0, '#06111f');
@@ -1428,7 +1418,6 @@
       ctx.restore();
     }
 
-    // ===== Helpers =====
     function clampPaddle() {
       if (paddle.x < 0) paddle.x = 0;
       if (paddle.x > canvas.width - paddle.w) paddle.x = canvas.width - paddle.w;
@@ -1485,7 +1474,6 @@
       return true;
     }
 
-    // ===== Collision / Damage =====
     function damageBlock(c, r, b, isMissile = false) {
       const blk = blocks[c][r];
       if (!blk || blk.status !== 1) return;
@@ -1544,6 +1532,37 @@
       }
     }
 
+    function explodeMissile(x, y) {
+      const targets = [];
+
+      for (let c = 0; c < blockColumnCount; c++) {
+        for (let r = 0; r < blockRowCount; r++) {
+          const blk = blocks[c][r];
+          if (blk.status !== 1) continue;
+
+          const cx = blk.x + blockWidth / 2;
+          const cy = blk.y + blockHeight / 2;
+          const dist = Math.hypot(cx - x, cy - y);
+
+          if (dist <= MISSILE_EXPLOSION_RADIUS) {
+            targets.push({ c, r });
+          }
+        }
+      }
+
+      spawnParticles(x, y, 18, 1.7, 'gold');
+      spawnSparkle(x, y, 12);
+      flashes.push({ x: x - MISSILE_EXPLOSION_RADIUS, y: y - MISSILE_EXPLOSION_RADIUS, w: MISSILE_EXPLOSION_RADIUS * 2, h: MISSILE_EXPLOSION_RADIUS * 2, life: 8 });
+      beep(920, 0.05, 0.085);
+      buzz(12);
+
+      for (const t of targets) {
+        if (blocks[t.c] && blocks[t.c][t.r] && blocks[t.c][t.r].status === 1) {
+          damageBlock(t.c, t.r, null, true);
+        }
+      }
+    }
+
     function resolveBallBlockCollision(b, nx, ny, stepDx, stepDy) {
       const pierceOn = performance.now() < b.pierceUntil;
 
@@ -1554,7 +1573,6 @@
 
           if (!circleHitsRect(nx, ny, b.r, blk.x, blk.y, blockWidth, blockHeight)) continue;
 
-          // side estimation
           const prevX = b.x;
           const prevY = b.y;
 
@@ -1629,8 +1647,7 @@
             if (blk.status !== 1) continue;
 
             if (m.x >= blk.x && m.x <= blk.x + blockWidth && m.y >= blk.y && m.y <= blk.y + blockHeight) {
-              damageBlock(c, r, null, true);
-              spawnParticles(m.x, m.y, 8, 1.0, 'gold');
+              explodeMissile(m.x, m.y);
               missiles.splice(i, 1);
               removed = true;
             }
@@ -1662,7 +1679,6 @@
       let nx = b.x + stepDx;
       let ny = b.y + stepDy;
 
-      // walls
       if (nx > canvas.width - b.r) {
         nx = canvas.width - b.r;
         b.dx = -Math.abs(b.dx);
@@ -1676,7 +1692,6 @@
         b.dy = Math.abs(b.dy);
       }
 
-      // paddle
       const movingDown = stepDy > 0;
       const crossedPaddleTop = b.y + b.r <= paddle.y && ny + b.r >= paddle.y;
 
@@ -1709,7 +1724,7 @@
       }
 
       if (ny > canvas.height + b.r + 2) {
-        return true; // lost
+        return true;
       }
 
       resolveBallBlockCollision(b, nx, ny, stepDx, stepDy);
@@ -1732,7 +1747,7 @@
         if (b.trail.length > 4) b.trail.shift();
 
         const maxMove = Math.max(Math.abs(b.dx), Math.abs(b.dy));
-        const subSteps = Math.max(1, Math.ceil(maxMove / 4)); // 高速時のすり抜け対策
+        const subSteps = Math.max(1, Math.ceil(maxMove / 4));
         const stepDx = b.dx / subSteps;
         const stepDy = b.dy / subSteps;
 
@@ -1752,13 +1767,11 @@
       if (balls.length === 0 && !isGameOver) loseLife();
     }
 
-    // ===== Missile charge =====
     function updateMissileCharge() {
       if (!running || isPaused || isGameOver) return;
       chargeMissile(MISSILE_PASSIVE_CHARGE);
     }
 
-    // ===== Loop =====
     function loop() {
       if (!running || isPaused || isGameOver) return;
 
@@ -1786,7 +1799,6 @@
       requestAnimationFrame(loop);
     }
 
-    // ===== UI =====
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
@@ -1934,7 +1946,6 @@
       clampPaddle();
     }
 
-    // ===== Double tap / double click missile =====
     let isMouseDown = false;
     let lastTapTime = 0;
     let lastTapX = 0;
@@ -1992,7 +2003,6 @@
       movePaddleByClientX(e.clientX);
     });
 
-    // ===== Bind =====
     pauseBtn.addEventListener('click', () => {
       if (!running || isGameOver) return;
       if (isPaused) resumeGame();
@@ -2068,7 +2078,6 @@
       resizeCanvasTall();
     });
 
-    // ===== Init =====
     resizeCanvasTall();
     paddle.x = (canvas.width - paddle.w) / 2;
     paddle.y = canvas.height - 25;
