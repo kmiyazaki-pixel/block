@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>BREAKOUT RANKING BATTLE</title>
+  <title>ブロック崩し ランキングバトル</title>
   <style>
     :root {
       --neon-blue: #00d2ff;
@@ -216,6 +216,7 @@
 
     #start-panel { display: block; border-color: rgba(0,210,255,0.32); }
     #ranking-panel { border-color: rgba(255,0,127,0.4); }
+    #all-ranking-panel { border-color: rgba(0,210,255,0.32); }
 
     .tip {
       text-align: left;
@@ -428,17 +429,17 @@
 <body>
 
   <div class="header" id="header">
-    <div class="score-display">SCORE: <span id="score">0</span></div>
+    <div class="score-display">スコア: <span id="score">0</span></div>
 
     <div class="status-line" id="status-line">
-      <span class="badge" id="st-wide">WIDE</span>
-      <span class="badge" id="st-pierce">PIERCE</span>
-      <span class="badge" id="st-multi">MULTI x1</span>
+      <span class="badge" id="st-wide">ワイド</span>
+      <span class="badge" id="st-pierce">貫通</span>
+      <span class="badge" id="st-multi">マルチ x1</span>
     </div>
 
     <div class="missile-wrap">
       <div class="missile-head">
-        <span>MISSILE AUTO</span>
+        <span>オートミサイル</span>
         <span id="missile-text">0%</span>
       </div>
       <div class="missile-bar">
@@ -453,77 +454,92 @@
     <canvas id="gameCanvas" width="300" height="560"></canvas>
 
     <div id="start-panel" class="panel">
-      <h2 style="color:var(--neon-blue);">BREAKOUT</h2>
-      <div class="sub">Tap START to play</div>
+      <h2 style="color:var(--neon-blue);">ブロック崩し</h2>
+      <div class="sub">スタートでゲーム開始</div>
 
       <div class="start-actions">
-        <button class="menu-btn" id="start-btn">START</button>
-        <button class="menu-btn secondary" id="refresh-ranking-btn">RANKING REFRESH</button>
-        <button class="menu-btn secondary" id="open-admin-btn">ADMIN</button>
+        <button class="menu-btn" id="start-btn">スタート</button>
+        <button class="menu-btn secondary" id="open-admin-btn">管理者</button>
+        <button class="menu-btn secondary" id="open-all-ranking-btn">ランキング</button>
       </div>
 
-      <div class="sub" style="margin-top:12px;">LIFE: 2 / Ball: 20 → 10 / WAVEごとに +0.22 で無限加速</div>
+      <div class="sub" style="margin-top:12px;">LIFE: 2 / ボール: 20 → 10 / WAVEごとに +0.22 で加速</div>
 
       <div class="ranking-box">
-        <div class="ranking-title">TOP 5 RANKING</div>
+        <div class="ranking-title">TOP 5 ランキング</div>
         <div class="ranking-list" id="ranking-list">
-          <div class="empty-note">Loading...</div>
+          <div class="empty-note">読み込み中...</div>
         </div>
       </div>
     </div>
 
+    <div id="all-ranking-panel" class="panel">
+      <h2 style="color:var(--neon-blue);">全体ランキング</h2>
+      <div class="sub">全プレイヤーのランキング</div>
+
+      <div class="ranking-box">
+        <div class="ranking-title">全員ランキング</div>
+        <div class="ranking-list" id="all-ranking-list">
+          <div class="empty-note">読み込み中...</div>
+        </div>
+      </div>
+
+      <button class="menu-btn secondary" id="refresh-all-ranking-btn" style="margin-top:12px;">更新</button>
+      <button class="menu-btn secondary" id="back-from-all-ranking-btn" style="margin-top:10px;">戻る</button>
+    </div>
+
     <div id="tutorial-panel" class="panel">
-      <h2 style="color:#fff;">HOW TO PLAY</h2>
+      <h2 style="color:#fff;">遊び方</h2>
       <div class="tip">
         ・画面どこをこすっても操作できる（PCは押しながら）<br>
-        ・ブロック全消しでWAVE進行、速度は上限なしで上昇<br>
+        ・ブロック全消しでWAVE進行、速度は上昇<br>
         ・硬いブロックは2回で破壊<br>
         ・waveが進むほど硬いブロック率も少し上がる<br>
-        ・MISSILEは自動チャージ / 満タンで自動発射<br>
-        ・MISSILEは範囲爆発
+        ・ミサイルは自動チャージ、満タンで自動発射<br>
+        ・ミサイルは範囲爆発
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
 
     <div id="pause-panel" class="panel">
-      <h2 style="color:#fff;">PAUSED</h2>
-      <div class="sub">Tap resume to continue</div>
-      <button class="menu-btn" id="resume-btn">RESUME</button>
-      <button class="menu-btn" id="restart-btn" style="margin-top:10px;">RESTART</button>
+      <h2 style="color:#fff;">一時停止</h2>
+      <div class="sub">再開でゲームに戻る</div>
+      <button class="menu-btn" id="resume-btn">再開</button>
+      <button class="menu-btn" id="restart-btn" style="margin-top:10px;">スタートへ戻る</button>
     </div>
 
     <div id="ranking-panel" class="panel">
-      <h2 style="color:var(--neon-pink);">GAME OVER</h2>
-      <div class="sub">Your score: <span id="final-score">0</span></div>
-      <input type="text" id="name-input" placeholder="YOUR NAME" maxlength="10">
-      <button class="menu-btn" id="submit-btn">SUBMIT</button>
-      <button class="menu-btn secondary" id="cancel-submit-btn" style="margin-top:10px;">BACK TO START</button>
+      <h2 style="color:var(--neon-pink);">ゲームオーバー</h2>
+      <div class="sub">今回のスコア: <span id="final-score">0</span></div>
+      <input type="text" id="name-input" placeholder="なまえ" maxlength="10">
+      <button class="menu-btn" id="submit-btn">送信</button>
+      <button class="menu-btn secondary" id="cancel-submit-btn" style="margin-top:10px;">スタートへ戻る</button>
     </div>
 
     <div id="admin-login-panel" class="panel">
-      <h2 style="color:#fff;">ADMIN LOGIN</h2>
+      <h2 style="color:#fff;">管理者ログイン</h2>
       <div class="sub">Bearer token を入力</div>
-      <input type="password" id="admin-token-input" placeholder="ADMIN TOKEN">
-      <button class="menu-btn" id="admin-login-btn">LOGIN</button>
-      <button class="menu-btn secondary" id="admin-login-back-btn" style="margin-top:10px;">BACK</button>
+      <input type="password" id="admin-token-input" placeholder="管理者トークン">
+      <button class="menu-btn" id="admin-login-btn">ログイン</button>
+      <button class="menu-btn secondary" id="admin-login-back-btn" style="margin-top:10px;">戻る</button>
     </div>
 
     <div id="admin-panel" class="panel">
-      <h2 style="color:#fff;">ADMIN PANEL</h2>
+      <h2 style="color:#fff;">管理者パネル</h2>
       <div class="sub">スコア管理</div>
 
       <div class="admin-top-actions">
-        <button class="menu-btn secondary" id="admin-refresh-btn">REFRESH LIST</button>
-        <button class="menu-btn danger" id="admin-delete-all-btn">DELETE ALL</button>
+        <button class="menu-btn secondary" id="admin-refresh-btn">一覧更新</button>
+        <button class="menu-btn danger" id="admin-delete-all-btn">全削除</button>
       </div>
 
       <div class="admin-list" id="admin-list">
-        <div class="empty-note">Loading...</div>
+        <div class="empty-note">読み込み中...</div>
       </div>
 
       <div class="admin-actions" style="margin-top:12px;">
-        <button class="menu-btn secondary" id="admin-logout-btn">LOGOUT</button>
-        <button class="menu-btn secondary" id="admin-back-btn">BACK TO START</button>
+        <button class="menu-btn secondary" id="admin-logout-btn">ログアウト</button>
+        <button class="menu-btn secondary" id="admin-back-btn">戻る</button>
       </div>
     </div>
 
@@ -555,8 +571,13 @@
 
     const startPanel = document.getElementById('start-panel');
     const startBtn = document.getElementById('start-btn');
-    const refreshRankingBtn = document.getElementById('refresh-ranking-btn');
     const openAdminBtn = document.getElementById('open-admin-btn');
+    const openAllRankingBtn = document.getElementById('open-all-ranking-btn');
+
+    const allRankingPanel = document.getElementById('all-ranking-panel');
+    const allRankingListEl = document.getElementById('all-ranking-list');
+    const refreshAllRankingBtn = document.getElementById('refresh-all-ranking-btn');
+    const backFromAllRankingBtn = document.getElementById('back-from-all-ranking-btn');
 
     const tutorialPanel = document.getElementById('tutorial-panel');
     const tutorialOkBtn = document.getElementById('tutorial-ok-btn');
@@ -614,7 +635,7 @@
     }
 
     async function fetchRanking() {
-      rankingListEl.innerHTML = '<div class="empty-note">Loading...</div>';
+      rankingListEl.innerHTML = '<div class="empty-note">読み込み中...</div>';
       try {
         const res = await fetch(`${SERVER_URL}/api/ranking`, { cache: 'no-store' });
         const list = await res.json();
@@ -636,6 +657,29 @@
       }
     }
 
+    async function fetchAllRanking() {
+      allRankingListEl.innerHTML = '<div class="empty-note">読み込み中...</div>';
+      try {
+        const res = await fetch(`${SERVER_URL}/api/ranking?all=1`, { cache: 'no-store' });
+        const list = await res.json();
+
+        if (!Array.isArray(list) || list.length === 0) {
+          allRankingListEl.innerHTML = '<div class="empty-note">まだスコアがありません</div>';
+          return;
+        }
+
+        allRankingListEl.innerHTML = list.map((item, idx) => `
+          <div class="rank-row">
+            <div class="rank-num">${idx + 1}</div>
+            <div class="rank-name">${escapeHtml(item.name || 'PLAYER')}</div>
+            <div class="rank-score">${Number(item.score || 0)}</div>
+          </div>
+        `).join('');
+      } catch (e) {
+        allRankingListEl.innerHTML = '<div class="empty-note">取得失敗</div>';
+      }
+    }
+
     async function adminCheckLogin() {
       if (!adminToken) return false;
       try {
@@ -651,12 +695,12 @@
     async function adminLogin() {
       const token = adminTokenInput.value.trim();
       if (!token) {
-        toast('TOKENを入力してください');
+        toast('トークンを入力してください');
         return;
       }
 
       adminLoginBtn.disabled = true;
-      adminLoginBtn.textContent = 'CHECKING...';
+      adminLoginBtn.textContent = '確認中...';
 
       try {
         const res = await fetch(`${SERVER_URL}/api/admin/check`, {
@@ -670,22 +714,22 @@
 
         adminToken = token;
         localStorage.setItem('adminToken', adminToken);
-        toast('ADMIN LOGIN OK');
+        toast('管理者ログイン成功');
         showPanel(adminPanel);
         await fetchAdminScores();
       } catch (e) {
         toast('通信失敗');
       } finally {
         adminLoginBtn.disabled = false;
-        adminLoginBtn.textContent = 'LOGIN';
+        adminLoginBtn.textContent = 'ログイン';
       }
     }
 
     async function fetchAdminScores() {
-      adminListEl.innerHTML = '<div class="empty-note">Loading...</div>';
+      adminListEl.innerHTML = '<div class="empty-note">読み込み中...</div>';
 
       if (!adminToken) {
-        adminListEl.innerHTML = '<div class="empty-note">未ログイン</div>';
+        adminListEl.innerHTML = '<div class="empty-note">未ログインです</div>';
         return;
       }
 
@@ -696,7 +740,7 @@
         });
 
         if (res.status === 401) {
-          toast('認証切れ');
+          toast('認証切れです');
           adminLogout();
           return;
         }
@@ -721,9 +765,9 @@
                 <div class="admin-name">${escapeHtml(item.name || 'PLAYER')}</div>
                 <div class="admin-score">${Number(item.score || 0)}</div>
               </div>
-              <div class="admin-meta">ID: ${escapeHtml(id)}<br>DATE: ${escapeHtml(formatDate(item.date))}</div>
+              <div class="admin-meta">ID: ${escapeHtml(id)}<br>日時: ${escapeHtml(formatDate(item.date))}</div>
               <div class="small-btn-row">
-                <button class="small-btn delete" data-delete-id="${escapeHtml(id)}">DELETE</button>
+                <button class="small-btn delete" data-delete-id="${escapeHtml(id)}">削除</button>
               </div>
             </div>
           `;
@@ -744,7 +788,7 @@
         });
 
         if (res.status === 401) {
-          toast('認証切れ');
+          toast('認証切れです');
           adminLogout();
           return;
         }
@@ -757,6 +801,7 @@
         toast('1件削除しました');
         await fetchAdminScores();
         await fetchRanking();
+        await fetchAllRanking();
       } catch (e) {
         toast('通信失敗');
       }
@@ -772,7 +817,7 @@
         });
 
         if (res.status === 401) {
-          toast('認証切れ');
+          toast('認証切れです');
           adminLogout();
           return;
         }
@@ -785,6 +830,7 @@
         toast('全件削除しました');
         await fetchAdminScores();
         await fetchRanking();
+        await fetchAllRanking();
       } catch (e) {
         toast('通信失敗');
       }
@@ -1061,7 +1107,7 @@
       initBlocks();
       hitHistory.length = 0;
       adjustAllBallSpeeds();
-      toast(`WAVE ${wave} / HARD ${(getHardBlockRate() * 100).toFixed(0)}%`);
+      toast(`WAVE ${wave} / 硬いブロック ${(getHardBlockRate() * 100).toFixed(0)}%`);
     }
 
     function isAllCleared() {
@@ -1098,27 +1144,27 @@
       const wLeft = Math.max(0, wideUntil - now);
       if (wLeft > 0) {
         stWide.classList.add('on');
-        stWide.textContent = `WIDE ${(wLeft / 1000).toFixed(1)}s`;
+        stWide.textContent = `ワイド ${(wLeft / 1000).toFixed(1)}秒`;
       } else {
         stWide.classList.remove('on');
-        stWide.textContent = 'WIDE';
+        stWide.textContent = 'ワイド';
       }
 
       const pLeft = Math.max(0, pierceUntil - now);
       if (pLeft > 0) {
         stPierce.classList.add('on');
-        stPierce.textContent = `PIERCE ${(pLeft / 1000).toFixed(1)}s`;
+        stPierce.textContent = `貫通 ${(pLeft / 1000).toFixed(1)}秒`;
       } else {
         stPierce.classList.remove('on');
-        stPierce.textContent = 'PIERCE';
+        stPierce.textContent = '貫通';
       }
 
       stMulti.classList.toggle('on', balls.length > 1);
-      stMulti.textContent = `MULTI x${balls.length}`;
+      stMulti.textContent = `マルチ x${balls.length}`;
 
       const pct = Math.max(0, Math.min(100, missileCharge));
       missileFillEl.style.width = `${pct}%`;
-      missileTextEl.textContent = pct >= 100 ? 'READY' : `${pct.toFixed(0)}%`;
+      missileTextEl.textContent = pct >= 100 ? '発射!' : `${pct.toFixed(0)}%`;
       missileTextEl.className = pct >= 100 ? 'missile-ready' : '';
     }
 
@@ -1129,7 +1175,7 @@
         clearTimeout(wideTimer);
         paddle.w = Math.min(paddleBaseW * 1.8, 112);
         wideUntil = Math.max(wideUntil, now + WIDE_MS);
-        toast('POWER: WIDE');
+        toast('ワイド取得');
         beep(520, 0.02, 0.05);
         spawnSparkle(paddle.x + paddle.w / 2, paddle.y, 4);
 
@@ -1141,7 +1187,7 @@
       }
 
       if (type === PowerType.MULTI) {
-        toast('POWER: MULTI');
+        toast('マルチ取得');
         beep(680, 0.03, 0.06);
         const b = balls[0] || makeBall(canvas.width / 2, canvas.height / 2, 1, -1);
         balls.push(makeBall(b.x, b.y, -b.dx, b.dy));
@@ -1151,7 +1197,7 @@
       }
 
       if (type === PowerType.PIERCE) {
-        toast('POWER: PIERCE');
+        toast('貫通取得');
         beep(760, 0.03, 0.06);
         pierceUntil = Math.max(pierceUntil, now + PIERCE_MS);
         balls.forEach(bb => bb.pierceUntil = Math.max(bb.pierceUntil, now + PIERCE_MS));
@@ -1182,7 +1228,7 @@
       fever = 0;
       feverEndAt = performance.now() + FEVER_DURATION_MS;
       beep(980, 0.05, 0.08);
-      toast('FEVER x2!');
+      toast('フィーバー x2!');
       spawnSparkle(canvas.width / 2, canvas.height * 0.45, 10);
     }
 
@@ -1191,7 +1237,7 @@
       if (performance.now() >= feverEndAt) {
         feverActive = false;
         beep(420, 0.04, 0.055);
-        toast('FEVER END');
+        toast('フィーバー終了');
       }
     }
 
@@ -1461,7 +1507,7 @@
 
       beep(1180, 0.04, 0.08);
       spawnParticles(paddle.x + paddle.w / 2, paddle.y - 2, 10, 1.4, 'gold');
-      toast('AUTO MISSILE!');
+      toast('オートミサイル発射!');
       return true;
     }
 
@@ -1675,7 +1721,7 @@
 
       beep(220, 0.06, 0.09);
       buzz(16);
-      toast(`MISS! LIFE ${lives}`);
+      toast(`ミス! 残りライフ ${lives}`);
 
       if (lives <= 0) endGame();
     }
@@ -1810,6 +1856,7 @@
 
     function showPanel(panelEl) {
       startPanel.style.display = 'none';
+      allRankingPanel.style.display = 'none';
       tutorialPanel.style.display = 'none';
       pausePanel.style.display = 'none';
       rankingPanel.style.display = 'none';
@@ -1923,7 +1970,7 @@
       localStorage.setItem('playerName', name);
 
       submitBtn.disabled = true;
-      submitBtn.textContent = 'SENDING...';
+      submitBtn.textContent = '送信中...';
 
       try {
         await fetch(`${SERVER_URL}/api/save-score`, {
@@ -1931,15 +1978,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, score })
         });
-        toast('SCORE SAVED');
+        toast('スコアを保存しました');
       } catch (e) {
-        toast('SAVE FAILED');
+        toast('保存失敗');
       }
 
       submitBtn.disabled = false;
-      submitBtn.textContent = 'SUBMIT';
+      submitBtn.textContent = '送信';
 
       await fetchRanking();
+      await fetchAllRanking();
       showPanel(startPanel);
     }
 
@@ -2008,9 +2056,18 @@
     submitBtn.addEventListener('click', submitScore);
     cancelSubmitBtn.addEventListener('click', backToStartFromGameOver);
 
-    refreshRankingBtn.addEventListener('click', async () => {
-      await fetchRanking();
-      toast('RANKING UPDATED');
+    openAllRankingBtn.addEventListener('click', async () => {
+      await fetchAllRanking();
+      showPanel(allRankingPanel);
+    });
+
+    refreshAllRankingBtn.addEventListener('click', async () => {
+      await fetchAllRanking();
+      toast('ランキングを更新しました');
+    });
+
+    backFromAllRankingBtn.addEventListener('click', () => {
+      showPanel(startPanel);
     });
 
     openAdminBtn.addEventListener('click', async () => {
@@ -2031,18 +2088,19 @@
 
     adminRefreshBtn.addEventListener('click', async () => {
       await fetchAdminScores();
-      toast('LIST UPDATED');
+      toast('一覧を更新しました');
     });
 
     adminDeleteAllBtn.addEventListener('click', deleteAllScores);
 
     adminLogoutBtn.addEventListener('click', () => {
       adminLogout();
-      toast('LOGOUT');
+      toast('ログアウトしました');
     });
 
     adminBackBtn.addEventListener('click', async () => {
       await fetchRanking();
+      await fetchAllRanking();
       showPanel(startPanel);
     });
 
@@ -2069,6 +2127,7 @@
     showPanel(startPanel);
     updateStatusUI();
     fetchRanking();
+    fetchAllRanking();
   </script>
 </body>
 </html>
