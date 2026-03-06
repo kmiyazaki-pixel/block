@@ -438,7 +438,7 @@
 
     <div class="missile-wrap">
       <div class="missile-head">
-        <span>MISSILE</span>
+        <span>MISSILE AUTO</span>
         <span id="missile-text">0%</span>
       </div>
       <div class="missile-bar">
@@ -479,8 +479,8 @@
         ・ブロック全消しでWAVE進行、速度は上限なしで上昇<br>
         ・硬いブロックは2回で破壊<br>
         ・waveが進むほど硬いブロック率も少し上がる<br>
-        ・ダブルタップ / ダブルクリックでMISSILE発射<br>
-        ・MISSILEは溜まりにくく、着弾で範囲爆発
+        ・MISSILEは自動チャージ / 満タンで自動発射<br>
+        ・MISSILEは範囲爆発
       </div>
       <button class="menu-btn" id="tutorial-ok-btn">OK</button>
     </div>
@@ -815,8 +815,6 @@
       }
     }
 
-    function addShake() {}
-
     function spawnParticles(x, y, n = 10, force = 1.0, colorMode = 'white') {
       for (let i = 0; i < n; i++) {
         const a = Math.random() * Math.PI * 2;
@@ -960,6 +958,7 @@
     const WAVE_SPEED_STEP = 0.22;
 
     let missileCharge = 0;
+    let missileAutoQueued = false;
     const MISSILE_MAX = 100;
     const MISSILE_PASSIVE_CHARGE = 0.010;
     const MISSILE_BLOCK_CHARGE = 3;
@@ -1244,7 +1243,6 @@
 
     function drawPaddle() {
       ctx.save();
-
       const grd = ctx.createLinearGradient(paddle.x, paddle.y, paddle.x, paddle.y + paddle.h);
       grd.addColorStop(0, '#7ff1ff');
       grd.addColorStop(0.45, '#00d2ff');
@@ -1255,7 +1253,6 @@
 
       ctx.fillStyle = 'rgba(255,255,255,0.18)';
       ctx.fillRect(paddle.x + 4, paddle.y + 1, Math.max(10, paddle.w - 8), 2);
-
       ctx.restore();
     }
 
@@ -1450,28 +1447,36 @@
       return dx * dx + dy * dy <= r * r;
     }
 
-    function chargeMissile(amount) {
-      missileCharge = Math.min(MISSILE_MAX, missileCharge + amount);
-    }
-
     function fireMissiles() {
       const now = performance.now();
-      if (missileCharge < MISSILE_MAX) {
-        toast('MISSILE NOT READY');
-        return false;
-      }
+      if (missileCharge < MISSILE_MAX) return false;
       if (now - lastMissileAt < MISSILE_COOLDOWN_MS) return false;
 
       lastMissileAt = now;
       missileCharge = 0;
+      missileAutoQueued = false;
 
       missiles.push({ x: paddle.x + 8, y: paddle.y - 4, vy: -7.2 });
       missiles.push({ x: paddle.x + paddle.w - 8, y: paddle.y - 4, vy: -7.2 });
 
       beep(1180, 0.04, 0.08);
       spawnParticles(paddle.x + paddle.w / 2, paddle.y - 2, 10, 1.4, 'gold');
-      toast('MISSILE FIRE!');
+      toast('AUTO MISSILE!');
       return true;
+    }
+
+    function tryAutoFireMissile() {
+      if (!running || isPaused || isGameOver) return;
+      if (missileCharge < MISSILE_MAX) return;
+      missileAutoQueued = true;
+      fireMissiles();
+    }
+
+    function chargeMissile(amount) {
+      missileCharge = Math.min(MISSILE_MAX, missileCharge + amount);
+      if (missileCharge >= MISSILE_MAX) {
+        tryAutoFireMissile();
+      }
     }
 
     function damageBlock(c, r, b, isMissile = false) {
@@ -1769,7 +1774,11 @@
 
     function updateMissileCharge() {
       if (!running || isPaused || isGameOver) return;
-      chargeMissile(MISSILE_PASSIVE_CHARGE);
+      if (missileCharge < MISSILE_MAX) {
+        chargeMissile(MISSILE_PASSIVE_CHARGE);
+      } else if (missileAutoQueued) {
+        fireMissiles();
+      }
     }
 
     function loop() {
@@ -1825,6 +1834,7 @@
       pierceUntil = 0;
 
       missileCharge = 0;
+      missileAutoQueued = false;
       missiles.length = 0;
       lastMissileAt = 0;
 
@@ -1947,36 +1957,10 @@
     }
 
     let isMouseDown = false;
-    let lastTapTime = 0;
-    let lastTapX = 0;
-    let lastTapY = 0;
-    const DOUBLE_TAP_MS = 260;
-    const DOUBLE_TAP_DIST = 36;
-
-    function handleTapForMissile(clientX, clientY) {
-      const now = performance.now();
-      const dx = clientX - lastTapX;
-      const dy = clientY - lastTapY;
-      const dist2 = dx * dx + dy * dy;
-
-      if (now - lastTapTime <= DOUBLE_TAP_MS && dist2 <= DOUBLE_TAP_DIST * DOUBLE_TAP_DIST) {
-        fireMissiles();
-        lastTapTime = 0;
-        lastTapX = 0;
-        lastTapY = 0;
-        return;
-      }
-
-      lastTapTime = now;
-      lastTapX = clientX;
-      lastTapY = clientY;
-    }
 
     window.addEventListener('touchstart', (e) => {
       if (!running || isPaused || isGameOver) return;
-      const t = e.touches[0];
-      handleTapForMissile(t.clientX, t.clientY);
-      movePaddleByClientX(t.clientX);
+      movePaddleByClientX(e.touches[0].clientX);
     }, { passive: true });
 
     window.addEventListener('touchmove', (e) => {
@@ -1989,7 +1973,6 @@
       if (!running || isPaused || isGameOver) return;
       ensureAudio();
       isMouseDown = true;
-      handleTapForMissile(e.clientX, e.clientY);
       movePaddleByClientX(e.clientX);
     });
 
